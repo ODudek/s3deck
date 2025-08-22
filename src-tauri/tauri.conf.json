@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "s3deck",
+  "productName": "S3Deck",
   "version": "0.1.0",
   "identifier": "com.adudek4.s3deck",
   "build": {
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "s3deck",
+        "title": "S3Deck",
         "width": 800,
         "height": 600
       }
