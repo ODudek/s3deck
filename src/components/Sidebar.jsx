@@ -1,11 +1,19 @@
-export default function Sidebar({ 
-  sidebarOpen, 
-  setSidebarOpen, 
-  activeView, 
-  setActiveView, 
-  selectedBucket, 
-  setSearchQuery 
+export default function Sidebar({
+  sidebarOpen,
+  setSidebarOpen,
+  activeView,
+  setActiveView,
+  selectedBucket,
+  setSearchQuery
 }) {
+  const handleNavClick = (view) => {
+    setActiveView(view);
+    setSearchQuery("");
+    // Close sidebar on mobile after navigation (lg breakpoint is 1024px)
+    if (window.innerWidth < 1024 && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
   return (
     <>
       {/* Mobile overlay */}
@@ -33,10 +41,7 @@ export default function Sidebar({
           <div className="mb-2">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Storage</h3>
             <button
-              onClick={() => {
-                setActiveView("buckets");
-                setSearchQuery("");
-              }}
+              onClick={() => handleNavClick("buckets")}
               className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ${
                 activeView === "buckets" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
               }`}
@@ -48,10 +53,7 @@ export default function Sidebar({
             </button>
             {selectedBucket && (
               <button
-                onClick={() => {
-                  setActiveView("objects");
-                  setSearchQuery("");
-                }}
+                onClick={() => handleNavClick("objects")}
                 className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ml-3 mt-0.5 ${
                   activeView === "objects" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
                 }`}
@@ -66,7 +68,12 @@ export default function Sidebar({
 
           <div className="mb-2">
             <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Settings</h3>
-            <button className="w-full text-left px-3 py-1.5 rounded text-slate-300 hover:bg-slate-700 transition-colors duration-200 flex items-center space-x-2">
+            <button
+              onClick={() => handleNavClick("config")}
+              className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ${
+                activeView === "config" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
+              }`}
+            >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
               </svg>

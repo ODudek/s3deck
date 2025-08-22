@@ -1,9 +1,23 @@
-export default function PropertiesModal({ 
-  isOpen, 
-  onClose, 
-  metadata, 
+// Helper function to format last modified date
+const formatLastModified = (lastModified) => {
+  if (!lastModified) return 'N/A';
+
+  try {
+    const date = new Date(lastModified);
+    if (isNaN(date.getTime())) return 'N/A';
+
+    return date.toLocaleString();
+  } catch (error) {
+    return 'N/A';
+  }
+};
+
+export default function PropertiesModal({
+  isOpen,
+  onClose,
+  metadata,
   isLoading,
-  error 
+  error
 }) {
   if (!isOpen) return null;
 
@@ -81,7 +95,7 @@ export default function PropertiesModal({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <span className="text-sm font-medium text-gray-500">Last Modified:</span>
-                    <span className="text-sm text-gray-900 sm:col-span-2">{metadata.lastModifiedFormatted || 'N/A'}</span>
+                    <span className="text-sm text-gray-900 sm:col-span-2">{formatLastModified(metadata.lastModified)}</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <span className="text-sm font-medium text-gray-500">ETag:</span>

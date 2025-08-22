@@ -8,7 +8,13 @@ S3 Deck is a desktop application built with Tauri + React (Vite) and a small Go 
 Key components:
 - Frontend: `src/` (React + Vite)
 - Tauri wrapper and config: `src-tauri/`
-- Go backend: `src-tauri/go-backend/` — a small HTTP server handling `/buckets`, `/objects` and `/add-bucket`
+- Go backend: `src-tauri/go-backend/` — modular HTTP server with endpoints for S3 operations
+  - `main.go` — entry point and server setup
+  - `handlers.go` — HTTP request handlers
+  - `s3client.go` — S3 operations using AWS SDK v2
+  - `config.go` — configuration management
+  - `models.go` — data structures
+  - `utils.go` — utility functions
 - User configuration file: `~/.s3deck/config.json`
 
 ## Quick start (development)
@@ -26,7 +32,7 @@ Alternative commands:
 
 Before running the backend manually:
 - `cd src-tauri/go-backend && go mod tidy`
-- To build the backend binary: `cd src-tauri/go-backend && go build -o go-s3-browser main.go`
+- To build the backend binary: `cd src-tauri/go-backend && go build -o s3deck-backend .`
 
 ## npm scripts (from package.json)
 - `npm run dev` — run Vite (frontend)
@@ -65,11 +71,21 @@ Config file location:
 Security note: `accessKey` and `secretKey` are stored in plain text in this file. For production use consider encrypting the file or using a system credential store.
 
 ## How the backend works (implementation notes)
-- Main file: `src-tauri/go-backend/main.go`
-- Uses AWS SDK for Go v2 to connect to S3-compatible services.
-- For custom endpoints (MinIO or other S3-compatible hosts) the `endpoint` field in the bucket config is used.
-- The backend adds a small, random `id` for new bucket configurations.
-- CORS is set permissively (`Access-Control-Allow-Origin: *`) to simplify local development.
+The backend has been refactored into a modular architecture:
+- **Entry point**: `src-tauri/go-backend/main.go` — server initialization and routing
+- **HTTP handlers**: `src-tauri/go-backend/handlers.go` — request processing and validation
+- **S3 operations**: `src-tauri/go-backend/s3client.go` — AWS SDK v2 integration
+- **Configuration**: `src-tauri/go-backend/config.go` — config file management
+- **Data models**: `src-tauri/go-backend/models.go` — request/response structures
+- **Utilities**: `src-tauri/go-backend/utils.go` — helper functions
+
+Key features:
+- Uses AWS SDK for Go v2 to connect to S3-compatible services
+- For custom endpoints (MinIO or other S3-compatible hosts) the `endpoint` field in the bucket config is used
+- The backend adds a small, random `id` for new bucket configurations
+- CORS is set permissively (`Access-Control-Allow-Origin: *`) to simplify local development
+- Consistent JSON error responses with proper HTTP status codes
+- UTC timestamps are sent as raw values for proper timezone handling in frontend
 
 ## Frontend — important notes
 - Frontend calls the backend at `http://localhost:8082` (hard-coded in several files, e.g. `src/App.jsx`). Ensure the backend runs on that port in development.
@@ -114,10 +130,18 @@ You can include the compiled Go binary in the final distribution if you want the
 ## Quick file map — useful files to inspect
 - `src/App.jsx` — main frontend component
 - `src/components/*` — UI components
-- `src-tauri/go-backend/main.go` — backend HTTP server
+- `src-tauri/go-backend/main.go` — backend entry point and server setup
+- `src-tauri/go-backend/handlers.go` — HTTP request handlers
+- `src-tauri/go-backend/s3client.go` — S3 operations
+- `src-tauri/go-backend/README.md` — detailed backend documentation
 - `src-tauri/Cargo.toml` — Tauri configuration (Rust)
 - `dev.sh` — convenience script to run the dev environment
 
 ## Notes for assistant agents (Claude)
 - Use this file as a quick reference for running the project, debugging common issues, and locating primary integration points.
-- If asked to modify behavior related to buckets/objects, check `src-tauri/go-backend/main.go` and corresponding frontend components in `src/components/` first.
+- If asked to modify behavior related to buckets/objects, check the modular backend files:
+  - `src-tauri/go-backend/handlers.go` for HTTP request handling
+  - `src-tauri/go-backend/s3client.go` for S3 operations
+  - `src-tauri/go-backend/models.go` for data structures
+  - Corresponding frontend components in `src/components/`
+- The backend is now modular for better maintainability — see `src-tauri/go-backend/README.md` for detailed architecture.

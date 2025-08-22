@@ -1,6 +1,20 @@
 import React from 'react';
 import { listen } from '@tauri-apps/api/event';
 
+// Helper function to format last modified date
+const formatLastModified = (lastModified) => {
+  if (!lastModified) return '-';
+
+  try {
+    const date = new Date(lastModified);
+    if (isNaN(date.getTime())) return '-';
+
+    return date.toLocaleString();
+  } catch (error) {
+    return '-';
+  }
+};
+
 export default function ObjectsTable({
   objects,
   loadingObjects,
@@ -241,7 +255,7 @@ export default function ObjectsTable({
                     {item.isFolder ? "-" : `${item.size.toLocaleString()} bytes`}
                   </td>
                   <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                    -
+                    {item.isFolder ? "-" : formatLastModified(item.lastModified)}
                   </td>
                 </tr>
               ))
