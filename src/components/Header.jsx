@@ -12,7 +12,8 @@ export default function Header({
   navigateToBreadcrumb, 
   loadObjects, 
   navigateBack, 
-  setShowAddForm 
+  setShowAddForm,
+  handleFolderUpload 
 }) {
   return (
     <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2">
@@ -92,16 +93,39 @@ export default function Header({
               <span className="sm:hidden">+</span>
             </button>
           )}
-          {activeView === "objects" && pathHistory.length > 0 && (
-            <button
-              onClick={navigateBack}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-medium transition-colors duration-200 flex items-center space-x-1 text-sm"
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-              </svg>
-              <span className="hidden sm:inline">Back</span>
-            </button>
+          {activeView === "objects" && (
+            <>
+              <input
+                type="file"
+                id="folderUpload"
+                webkitdirectory="true"
+                directory="true"
+                multiple
+                onChange={handleFolderUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => document.getElementById('folderUpload').click()}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors duration-200 whitespace-nowrap flex items-center space-x-1"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>
+                <span className="hidden sm:inline">Upload Folder</span>
+                <span className="sm:hidden">📁↑</span>
+              </button>
+              {pathHistory.length > 0 && (
+                <button
+                  onClick={navigateBack}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-medium transition-colors duration-200 flex items-center space-x-1 text-sm"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span className="hidden sm:inline">Back</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

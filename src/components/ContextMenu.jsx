@@ -63,6 +63,15 @@ export default function ContextMenu({ contextMenu, handleContextAction }) {
               <span>Download</span>
             </button>
           )}
+          <button
+            onClick={() => handleContextAction('properties', contextMenu.item)}
+            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <span>Properties</span>
+          </button>
           <div className="border-t border-gray-100 my-1"></div>
           <button
             onClick={() => handleContextAction('delete', contextMenu.item)}

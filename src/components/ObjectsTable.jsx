@@ -1,20 +1,149 @@
+import React from 'react';
+import { listen } from '@tauri-apps/api/event';
+
 export default function ObjectsTable({
   objects,
   loadingObjects,
   searchQuery,
   setSearchQuery,
   handleRightClick,
-  navigateToFolder
+  navigateToFolder,
+  onDrop,
+  isDragOver,
+  setIsDragOver
 }) {
+  console.log('ObjectsTable rendered with onDrop:', typeof onDrop);
+
+  // Listen for Tauri drag and drop events
+  React.useEffect(() => {
+    console.log('Setting up Tauri drag and drop listeners...');
+
+    const setupTauriListeners = async () => {
+      try {
+        // Listen for drag enter
+        await listen('tauri://drag-enter', (event) => {
+          console.log('Tauri: drag-enter', event);
+          setIsDragOver(true);
+        });
+
+        // Listen for drag over
+        await listen('tauri://drag-over', (event) => {
+          setIsDragOver(true);
+        });
+
+        // Listen for drag leave
+        await listen('tauri://drag-leave', (event) => {
+          setIsDragOver(false);
+        });
+
+        // Listen for file drop
+        await listen('tauri://drag-drop', (event) => {
+          console.log('Tauri: drag-drop', event);
+          console.log('Event payload:', event.payload);
+          console.log('Payload paths:', event.payload?.paths);
+          setIsDragOver(false);
+
+          // Extract file paths from Tauri payload
+          const filePaths = event.payload?.paths || [];
+          if (filePaths.length > 0) {
+            console.log('Calling handleTauriFileDrop with paths:', filePaths);
+            handleTauriFileDrop(filePaths);
+          } else {
+            console.log('No files in payload');
+          }
+        });
+
+        console.log('Tauri drag and drop listeners set up successfully');
+      } catch (error) {
+        console.error('Error setting up Tauri listeners:', error);
+      }
+    };
+
+    setupTauriListeners();
+  }, []);
+
+  const handleTauriFileDrop = async (filePaths) => {
+    console.log('handleTauriFileDrop called with:', filePaths);
+    console.log('onDrop function available:', typeof onDrop);
+
+    if (!onDrop) {
+      console.error('No onDrop handler provided');
+      return;
+    }
+
+    try {
+      setIsDragOver(false);
+      console.log('About to call onDrop with filePaths and tauri source');
+
+      // Call the Tauri-specific upload function
+      const result = await onDrop(filePaths, 'tauri');
+      console.log('onDrop result:', result);
+
+    } catch (error) {
+      console.error('Error processing Tauri file drop:', error);
+      console.error('Error stack:', error.stack);
+    }
+  };
   const filteredObjects = objects.filter(item => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return item.name.toLowerCase().includes(query);
   });
 
+  const handleDragOver = (e) => {
+    console.log('ObjectsTable: DragOver event', e.target);
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragEnter = (e) => {
+    console.log('ObjectsTable: DragEnter event', e.target);
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    console.log('ObjectsTable: DragLeave event', e.target);
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    console.log('ObjectsTable: Drop event received', e.target);
+    console.log('Files in dataTransfer:', e.dataTransfer.files.length);
+    console.log('Items in dataTransfer:', e.dataTransfer.items.length);
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    onDrop(e);
+  };
+
   return (
-    <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto max-h-[90vh] overflow-y-auto">
+    <div className="bg-white shadow-sm border border-gray-200 overflow-hidden relative">
+      <div
+        className={`w-full h-full transition-colors duration-200 ${
+          isDragOver ? 'border-2 border-blue-400 bg-blue-50' : ''
+        }`}
+        style={{ minHeight: isDragOver ? '200px' : 'auto' }}
+      >
+        {/* Drag overlay */}
+        {isDragOver && (
+          <div className="absolute inset-0 bg-blue-100 bg-opacity-80 flex items-center justify-center z-20 border-2 border-dashed border-blue-400">
+            <div className="text-center">
+              <svg className="w-12 h-12 text-blue-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <p className="text-blue-700 font-medium">Drop to upload</p>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-x-auto max-h-[90vh] overflow-y-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>
@@ -43,8 +172,16 @@ export default function ObjectsTable({
               </tr>
             ) : filteredObjects.length === 0 && !searchQuery ? (
               <tr>
-                <td colSpan="3" className="px-6 py-8 text-center">
-                  <p className="text-gray-500">Empty bucket</p>
+                <td colSpan="3" className="px-6 py-16 text-center">
+                  <div className="space-y-3">
+                    <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 font-medium">Empty bucket</p>
+                    <p className="text-sm text-gray-400">Drag and drop files or folders here to upload</p>
+                  </div>
                 </td>
               </tr>
             ) : filteredObjects.length === 0 && searchQuery ? (
@@ -111,6 +248,7 @@ export default function ObjectsTable({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
