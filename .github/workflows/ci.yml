@@ -12,6 +12,10 @@ env:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   test-frontend:
     name: Test Frontend
@@ -53,8 +57,9 @@ jobs:
     - name: Cache Go modules
       uses: actions/cache@v4
       with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('src-tauri/go-backend/go.sum') }}
+        path: |
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('src-tauri/go-backend/go.sum', 'src-tauri/go-backend/go.mod') }}
         restore-keys: |
           ${{ runner.os }}-go-
     
