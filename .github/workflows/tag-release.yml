@@ -10,7 +10,9 @@ env:
 
 permissions:
   contents: write
+  actions: write
   packages: write
+  pull-requests: write
 
 concurrency:
   group: tag-release-${{ github.ref }}
