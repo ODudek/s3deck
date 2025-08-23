@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"mime"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -66,4 +67,40 @@ func buildS3Key(currentPath, fileName string) string {
 // isFolder checks if a key represents a folder (ends with /)
 func isFolder(key string) bool {
 	return strings.HasSuffix(key, "/")
+}
+
+// collectFilesFromPath recursively collects all files from a given path
+// If path is a file, returns just that file
+// If path is a directory, returns all files in the directory recursively
+func collectFilesFromPath(path string) ([]string, error) {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat path %s: %v", path, err)
+	}
+
+	var files []string
+
+	if fileInfo.IsDir() {
+		// Walk the directory recursively
+		err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// Skip directories, only collect files
+			if !info.IsDir() {
+				files = append(files, filePath)
+			}
+
+			return nil
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to walk directory %s: %v", path, err)
+		}
+	} else {
+		// It's a single file
+		files = append(files, path)
+	}
+
+	return files, nil
 }

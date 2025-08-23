@@ -16,12 +16,12 @@ export default function Header({
   handleFolderUpload
 }) {
   return (
-    <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-2">
       <div className="flex items-center justify-between">
         {/* Mobile menu button */}
         <button
           type="button"
-          className="lg:hidden p-1.5 rounded text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className="lg:hidden p-1.5 rounded text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,7 +29,7 @@ export default function Header({
           </svg>
         </button>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
             {activeView === "buckets" ? "Buckets" :
              activeView === "config" ? "Configuration" :
              `${buckets.find(b => b.id === selectedBucket)?.displayName || buckets.find(b => b.id === selectedBucket)?.name || 'Bucket'}`}
@@ -41,18 +41,18 @@ export default function Header({
                   setSearchQuery("");
                   loadObjects(selectedBucket, "");
                 }}
-                className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap text-xs"
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-xs"
               >
                 {buckets.find(b => b.id === selectedBucket)?.displayName || buckets.find(b => b.id === selectedBucket)?.name}
               </button>
               {getBreadcrumbs().map((part, index) => (
                 <div key={index} className="flex items-center space-x-1">
-                  <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                   </svg>
                   <button
                     onClick={() => navigateToBreadcrumb(index)}
-                    className="text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap text-xs"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-xs"
                   >
                     {part}
                   </button>
@@ -70,15 +70,15 @@ export default function Header({
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-32 sm:w-40 px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-8"
+                className="w-32 sm:w-40 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-8 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
-              <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   <svg fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function ConfigView({
   buckets,
@@ -6,34 +7,9 @@ export default function ConfigView({
   onEditBucket,
   onAddBucket
 }) {
-  const [settings, setSettings] = useState({
-    theme: 'light',
-    defaultUploadPath: '',
-    maxFileSize: 100,
-    showHiddenFiles: false,
-    autoRefresh: true,
-    autoRefreshInterval: 30,
-    confirmDelete: true,
-    debugMode: false
-  });
-
+  const { settings, updateSetting } = useSettings();
   const [editingBucket, setEditingBucket] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-
-  // Load settings from localStorage on component mount
-  useEffect(() => {
-    const savedSettings = localStorage.getItem('s3deck-settings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
-  }, []);
-
-  // Save settings to localStorage when they change
-  const updateSetting = (key, value) => {
-    const newSettings = { ...settings, [key]: value };
-    setSettings(newSettings);
-    localStorage.setItem('s3deck-settings', JSON.stringify(newSettings));
-  };
 
   const handleDeleteBucket = (bucketId) => {
     onDeleteBucket(bucketId);
@@ -57,30 +33,30 @@ export default function ConfigView({
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto dark:text-white">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Configuration</h1>
-        <p className="text-gray-600">Manage your application settings and bucket configurations</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Configuration</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage your application settings and bucket configurations</p>
       </div>
 
       {/* Application Settings */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8 hover:shadow-md transition-shadow duration-200">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-          <h2 className="text-lg font-semibold text-gray-900">Application Settings</h2>
-          <p className="text-sm text-gray-500 mt-1">Customize your S3 Deck experience</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-8 hover:shadow-md transition-shadow duration-200">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700 dark:to-gray-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Application Settings</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Customize your S3 Deck experience</p>
         </div>
         <div className="p-6 space-y-6">
           {/* Theme */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Theme</label>
-              <p className="text-sm text-gray-500">Choose your preferred color theme</p>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred color theme</p>
             </div>
             <div className="relative">
               <select
                 value={settings.theme}
                 onChange={(e) => updateSetting('theme', e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 cursor-pointer hover:border-gray-400"
+                className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 cursor-pointer hover:border-gray-400 dark:text-white"
               >
                 <option value="light">Light</option>
                 <option value="dark">Dark</option>
@@ -97,8 +73,8 @@ export default function ConfigView({
           {/* Max File Size */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Maximum Upload File Size</label>
-              <p className="text-sm text-gray-500">Maximum size for individual file uploads</p>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Maximum Upload File Size</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Maximum size for individual file uploads</p>
             </div>
             <div className="flex items-center space-x-2">
               <input
@@ -112,15 +88,15 @@ export default function ConfigView({
                   background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(settings.maxFileSize / 1024) * 100}%, #e5e7eb ${(settings.maxFileSize / 1024) * 100}%, #e5e7eb 100%)`
                 }}
               />
-              <span className="text-sm text-gray-600 w-16">{formatFileSize(settings.maxFileSize)}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400 w-16">{formatFileSize(settings.maxFileSize)}</span>
             </div>
           </div>
 
           {/* Auto Refresh */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Auto Refresh</label>
-              <p className="text-sm text-gray-500">Automatically refresh object lists</p>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto Refresh</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Automatically refresh object lists</p>
             </div>
             <label className="toggle-switch">
               <input
@@ -143,7 +119,7 @@ export default function ConfigView({
                 <select
                   value={settings.autoRefreshInterval}
                   onChange={(e) => updateSetting('autoRefreshInterval', parseInt(e.target.value))}
-                  className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 cursor-pointer hover:border-gray-400"
+                  className="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-colors duration-200 cursor-pointer hover:border-gray-400 dark:text-white"
                 >
                   <option value={10}>10 seconds</option>
                   <option value={30}>30 seconds</option>
@@ -191,28 +167,13 @@ export default function ConfigView({
             </label>
           </div>
 
-          {/* Debug Mode */}
-          <div className="flex items-center justify-between">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Debug Mode</label>
-              <p className="text-sm text-gray-500">Enable detailed logging for troubleshooting</p>
-            </div>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={settings.debugMode}
-                onChange={(e) => updateSetting('debugMode', e.target.checked)}
-              />
-              <span className="toggle-slider"></span>
-            </label>
-          </div>
         </div>
       </div>
 
       {/* Bucket Management */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Bucket Management</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Bucket Management</h2>
           <button
             onClick={onAddBucket}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-[1.02]"
@@ -229,7 +190,7 @@ export default function ConfigView({
               <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              <p className="text-gray-500 mb-3">No buckets configured</p>
+              <p className="text-gray-500 dark:text-gray-400 mb-3">No buckets configured</p>
               <button
                 onClick={onAddBucket}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-all duration-200 hover:shadow-lg transform hover:scale-[1.02]"
@@ -240,17 +201,17 @@ export default function ConfigView({
           ) : (
             <div className="space-y-4">
               {buckets.map((bucket) => (
-                <div key={bucket.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                <div key={bucket.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all duration-200">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h3 className="font-medium text-gray-900">{bucket.displayName}</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-white">{bucket.displayName}</h3>
                       <div className="mt-1 space-y-1">
-                        <p className="text-sm text-gray-600">Bucket: {bucket.name}</p>
-                        <p className="text-sm text-gray-600">Region: {bucket.region}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Bucket: {bucket.name}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Region: {bucket.region}</p>
                         {bucket.endpoint && (
-                          <p className="text-sm text-gray-600">Endpoint: {bucket.endpoint}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Endpoint: {bucket.endpoint}</p>
                         )}
-                        <p className="text-sm text-gray-600">Access Key: {bucket.accessKey.substring(0, 8)}...</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Access Key: {bucket.accessKey.substring(0, 8)}...</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -293,7 +254,7 @@ export default function ConfigView({
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">Delete Bucket Configuration</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">Delete Bucket Configuration</h3>
                 </div>
               </div>
               <p className="text-gray-600 mb-6">
@@ -324,7 +285,7 @@ export default function ConfigView({
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] mx-4 overflow-y-auto shadow-2xl transform transition-all duration-200 scale-100">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-gray-900">Edit Bucket Configuration</h3>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">Edit Bucket Configuration</h3>
                 <button
                   onClick={() => setEditingBucket(null)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"

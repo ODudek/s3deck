@@ -276,7 +276,21 @@ func uploadFromPathHandler(w http.ResponseWriter, r *http.Request) {
 	uploadedFiles := []map[string]interface{}{}
 	failedFiles := []map[string]interface{}{}
 
-	for _, filePath := range requestData.Files {
+	// Collect all files from paths (including directories)
+	allFiles := []string{}
+	for _, inputPath := range requestData.Files {
+		files, err := collectFilesFromPath(inputPath)
+		if err != nil {
+			failedFiles = append(failedFiles, map[string]interface{}{
+				"path":  inputPath,
+				"error": fmt.Sprintf("failed to process path: %v", err),
+			})
+			continue
+		}
+		allFiles = append(allFiles, files...)
+	}
+
+	for _, filePath := range allFiles {
 		// Open the file from the local filesystem
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -298,13 +312,33 @@ func uploadFromPathHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		// Skip directories (should not happen after collectFilesFromPath)
+		if fileInfo.IsDir() {
+			file.Close()
+			continue
+		}
+
 		// Calculate the S3 key (relative path from base path + current path)
 		var s3Key string
 		if requestData.BasePath != "" {
 			relPath := trimPathPrefix(filePath, requestData.BasePath)
 			s3Key = relPath
 		} else {
-			s3Key = filepath.Base(filePath)
+			// Find common base from all input paths for maintaining structure
+			if len(requestData.Files) == 1 {
+				// Single path input - check if it's a directory
+				inputPath := requestData.Files[0]
+				if inputFileInfo, err := os.Stat(inputPath); err == nil && inputFileInfo.IsDir() {
+					// Include the directory name in the S3 key
+					dirName := filepath.Base(inputPath)
+					relPath := trimPathPrefix(filePath, inputPath)
+					s3Key = dirName + "/" + relPath
+				} else {
+					s3Key = filepath.Base(filePath)
+				}
+			} else {
+				s3Key = filepath.Base(filePath)
+			}
 		}
 
 		// Prepend current path if we're in a subfolder
@@ -336,7 +370,39 @@ func uploadFromPathHandler(w http.ResponseWriter, r *http.Request) {
 		Message:       fmt.Sprintf("Uploaded %d files, %d failed", len(uploadedFiles), len(failedFiles)),
 		UploadedFiles: uploadedFiles,
 		FailedFiles:   failedFiles,
-		TotalFiles:    len(requestData.Files),
+		TotalFiles:    len(allFiles),
+	})
+}
+
+// countFilesHandler handles POST /count-files
+func countFilesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		writeErrorResponse(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
+	var requestData struct {
+		Path string `json:"path"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		writeErrorResponse(w, http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+
+	if requestData.Path == "" {
+		writeErrorResponse(w, http.StatusBadRequest, "missing path")
+		return
+	}
+
+	files, err := collectFilesFromPath(requestData.Path)
+	if err != nil {
+		writeErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("failed to count files: %v", err))
+		return
+	}
+
+	writeJSONResponse(w, map[string]interface{}{
+		"count": len(files),
+		"path":  requestData.Path,
 	})
 }
 

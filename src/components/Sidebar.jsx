@@ -27,7 +27,7 @@ export default function Sidebar({
       {/* Sidebar */}
       <div className={`${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } fixed inset-y-0 left-0 z-50 w-56 bg-slate-800 text-white flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      } fixed inset-y-0 left-0 z-50 w-56 bg-slate-800 dark:bg-gray-900 text-white flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
         {/* Logo Section */}
         <div className="p-3">
           <div className="flex items-center space-x-2">

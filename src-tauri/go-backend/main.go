@@ -16,6 +16,7 @@ func main() {
 	http.HandleFunc("/add-bucket", corsHandler(addBucketConfigHandler))
 	http.HandleFunc("/upload", corsHandler(uploadFileHandler))
 	http.HandleFunc("/upload-paths", corsHandler(uploadFromPathHandler))
+	http.HandleFunc("/count-files", corsHandler(countFilesHandler))
 	http.HandleFunc("/delete", corsHandler(deleteObjectHandler))
 	http.HandleFunc("/metadata", corsHandler(getObjectMetadataHandler))
 	http.HandleFunc("/bucket", corsHandler(deleteBucketConfigHandler))

@@ -20,23 +20,23 @@ export default function BucketsTable({
   });
 
   return (
-    <div className="bg-white shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto max-h-[75vh] overflow-y-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 sticky top-0 z-10">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">
                 Name
               </th>
-              <th className="hidden sm:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+              <th className="hidden sm:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">
                 Region
               </th>
-              <th className="hidden md:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50">
+              <th className="hidden md:table-cell px-3 py-2 text-left text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider bg-gray-50 dark:bg-gray-700">
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {filteredBuckets.length === 0 && !searchQuery ? (
               <tr>
                 <td colSpan="3" className="px-6 py-8 text-center">
@@ -55,7 +55,7 @@ export default function BucketsTable({
                   <p className="text-gray-500 mb-3">No buckets found matching "{searchQuery}"</p>
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm"
                   >
                     Clear search
                   </button>
@@ -65,7 +65,7 @@ export default function BucketsTable({
               filteredBuckets.map((bucket) => (
                 <tr 
                   key={bucket.id} 
-                  className="hover:bg-gray-50 cursor-pointer select-none"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer select-none"
                   onContextMenu={(e) => handleRightClick(e, 'bucket', bucket)}
                   onDoubleClick={() => {
                     setCurrentPath("");
@@ -85,7 +85,7 @@ export default function BucketsTable({
                         </div>
                       </div>
                       <div className="ml-2 min-w-0 flex-1">
-                        <div className="text-sm font-medium text-gray-900 truncate hover:text-blue-600 transition-colors">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-300 truncate hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                           {bucket.displayName || bucket.name}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
@@ -96,7 +96,7 @@ export default function BucketsTable({
                     </div>
                   </td>
                   <td className="hidden sm:table-cell px-3 py-2 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{bucket.region}</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-300">{bucket.region}</span>
                     {bucket.endpoint && (
                       <div className="text-xs text-gray-500">Custom</div>
                     )}
