@@ -22,3 +22,41 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Go backend binaries
+src-tauri/go-backend/s3deck-backend*
+src-tauri/go-backend/go-s3-browser*
+src-tauri/go-backend/tmp/go-s3-browser*
+
+# Sensitive configuration files
+config.json
+*.env
+*.env.local
+.env
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Development
+.cache/
+tmp/
+temp/
+
+# Config with sensitive data (user configs will be in ~/.s3deck/)
+*.config.json

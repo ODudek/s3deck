@@ -1,0 +1,99 @@
+name: Tag Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release (${{ matrix.platform }})
+    runs-on: ${{ matrix.platform }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+    
+    - name: Install Rust stable
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Rust cache
+      uses: swatinem/rust-cache@v2
+      with:
+        workspaces: './src-tauri -> target'
+    
+    - name: Install dependencies (Ubuntu only)
+      if: matrix.platform == 'ubuntu-20.04'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+    
+    - name: Install frontend dependencies
+      run: npm ci
+    
+    - name: Install Go backend dependencies
+      working-directory: src-tauri/go-backend
+      run: go mod download
+    
+    - name: Get tag name
+      id: tag
+      run: echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+    
+    - name: Build and Release
+      uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tagName: ${{ steps.tag.outputs.TAG_NAME }}
+        releaseName: 'S3 Deck ${{ steps.tag.outputs.TAG_NAME }}'
+        releaseBody: |
+          ## 🚀 What's New in ${{ steps.tag.outputs.TAG_NAME }}
+          
+          Manual release triggered by tag.
+          
+          ## 📦 Installation
+          
+          ### Windows
+          - Download `S3Deck_*_x64_en-US.msi` for Windows installer
+          - Or download the portable `.exe` file
+          
+          ### macOS
+          - Download `S3Deck_*_aarch64.dmg` for Apple Silicon (M1/M2)
+          - Download `S3Deck_*_x64.dmg` for Intel Macs
+          
+          ### Linux
+          - Download `S3Deck_*_amd64.AppImage` for AppImage
+          - Download `S3Deck_*_amd64.deb` for Debian/Ubuntu
+          
+          ## 🔧 Features
+          
+          - Cross-platform S3 bucket management
+          - Drag & drop file uploads
+          - Dark mode support
+          - Real-time sync and updates
+          - Support for all S3-compatible services
+          
+          ## 📋 Changelog
+          
+          See [CHANGELOG.md](https://github.com/adudek4/s3deck/blob/main/CHANGELOG.md) for detailed changes.
+        releaseDraft: false
+        prerelease: false
+        includeDebug: false
