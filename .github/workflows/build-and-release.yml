@@ -1,0 +1,107 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build and Release (${{ matrix.platform }})
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Go backend dependencies
+        working-directory: src-tauri/go-backend
+        run: go mod download
+
+      - name: Make build script executable (Unix only)
+        if: matrix.platform != 'windows-latest'
+        working-directory: src-tauri/go-backend
+        run: chmod +x build.sh
+
+      - name: Get version
+        id: get_version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: v$VERSION"
+
+      - name: Build and Release (Main branch)
+        if: github.ref == 'refs/heads/main'
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ steps.get_version.outputs.VERSION }}
+          releaseName: "S3 Deck ${{ steps.get_version.outputs.VERSION }}"
+          releaseBody: |
+            ## 🚀 S3 Deck ${{ steps.get_version.outputs.VERSION }}
+
+            Auto-generated release from main branch.
+
+            ## 📦 Downloads
+
+            Choose the appropriate file for your platform:
+
+            ### Windows
+            - `S3Deck_*_x64_en-US.msi` - Windows Installer
+            - `S3Deck.exe` - Portable executable
+
+            ### macOS
+            - `S3Deck_*_aarch64.dmg` - Apple Silicon (M1/M2/M3)
+            - `S3Deck_*_x64.dmg` - Intel Macs
+
+            ### Linux
+            - `S3Deck_*_amd64.AppImage` - AppImage (Universal)
+            - `S3Deck_*_amd64.deb` - Debian/Ubuntu package
+
+            ## 🔧 What's New
+
+            - Cross-platform S3 bucket management
+            - Drag & drop file uploads with progress tracking
+            - Dark/Light mode support
+            - Multi-bucket configuration
+            - Real-time file browser
+            - Upload error handling and retry
+          releaseDraft: false
+          prerelease: false
+          includeUpdaterJson: false

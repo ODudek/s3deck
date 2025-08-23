@@ -8,6 +8,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build-and-release:
     name: Build and Release (${{ matrix.platform }})
@@ -52,6 +56,11 @@ jobs:
     - name: Install Go backend dependencies
       working-directory: src-tauri/go-backend
       run: go mod download
+    
+    - name: Make build script executable (Unix only)
+      if: matrix.platform != 'windows-latest'
+      working-directory: src-tauri/go-backend
+      run: chmod +x build.sh
     
     - name: Get tag name
       id: tag

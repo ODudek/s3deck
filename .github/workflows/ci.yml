@@ -9,6 +9,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: read
+
 jobs:
   test-frontend:
     name: Test Frontend
@@ -115,6 +118,11 @@ jobs:
     - name: Install Go backend dependencies
       working-directory: src-tauri/go-backend
       run: go mod download
+    
+    - name: Make build script executable (Unix only)
+      if: runner.os != 'Windows'
+      working-directory: src-tauri/go-backend
+      run: chmod +x build.sh
     
     - name: Build frontend
       run: npm run build

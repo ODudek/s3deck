@@ -5,7 +5,7 @@
   "identifier": "com.adudek4.s3deck",
   "build": {
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build && cd src-tauri/go-backend && ./build.sh",
+    "beforeBuildCommand": "npm run build && cd src-tauri/go-backend && node build.js",
     "frontendDist": "../dist"
   },
   "app": {
