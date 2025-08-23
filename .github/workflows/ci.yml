@@ -132,14 +132,5 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: v__VERSION__
-          releaseName: "S3 Deck v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
-          releaseDraft: true
-          prerelease: false
-          includeDebug: false
+      - name: Build Tauri app (test build only)
+        run: npm run tauri build
