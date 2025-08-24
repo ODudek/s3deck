@@ -39,9 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Architecture
 - React frontend with Vite build system
 - Tauri desktop application shell
-- Go backend HTTP server for S3 operations
+- Rust backend with Tauri commands for S3 operations
 - Local JSON configuration storage
-- AWS SDK v2 for S3 operations
+- AWS SDK for Rust for S3 operations
 - Tailwind CSS for styling
 
 ### Supported Platforms

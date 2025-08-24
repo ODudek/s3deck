@@ -1,54 +1,56 @@
 # S3 Deck — Instructions for Claude / Developers
 
-This file provides a concise overview of the project and developer instructions. It is intended as a quick reference for team members and assistant agents (e.g. Claude) — describing architecture, development startup, APIs and basic debugging tips.
+This file provides a concise overview of the project and developer instructions. It is intended as a quick reference for team members and assistant agents (e.g. Claude) — describing architecture, development startup, Tauri commands and basic debugging tips.
 
 ## Project overview
-S3 Deck is a desktop application built with Tauri + React (Vite) and a small Go backend. It enables browsing S3 buckets (and S3-compatible endpoints like MinIO) via a simple local HTTP API. The UI is implemented in React + Tailwind, packaged with Tauri; the Go backend exposes endpoints for listing buckets, listing objects, and saving connection configurations.
+S3 Deck is a desktop application built with Tauri + React (Vite) and a Rust backend. It enables browsing S3 buckets (and S3-compatible endpoints like MinIO) via Tauri IPC commands. The UI is implemented in React + Tailwind, packaged with Tauri; the Rust backend provides Tauri commands for S3 operations, configuration management, and file uploads.
 
 Key components:
 - Frontend: `src/` (React + Vite)
-- Tauri wrapper and config: `src-tauri/`
-- Go backend: `src-tauri/go-backend/` — modular HTTP server with endpoints for S3 operations
-  - `main.go` — entry point and server setup
-  - `handlers.go` — HTTP request handlers
-  - `s3client.go` — S3 operations using AWS SDK v2
-  - `config.go` — configuration management
-  - `models.go` — data structures
-  - `utils.go` — utility functions
+- Tauri application: `src-tauri/` — Rust-based desktop application with integrated S3 operations
+  - `src/main.rs` — entry point
+  - `src/lib.rs` — library entry point with Tauri setup
+  - `src/commands.rs` — Tauri commands for frontend-backend communication
+  - `src/s3_client.rs` — S3 operations using AWS SDK for Rust
+  - `src/config.rs` — configuration management
+  - `src/models.rs` — data structures and error types
 - User configuration file: `~/.s3deck/config.json`
 
 ## Quick start (development)
 The simplest way to start the development environment:
 
 - From repository root:
-  - `./dev.sh` (startup script that launches required processes)
+  - `./dev.sh` (startup script that launches Tauri with Vite)
   - or `npm run start` (alias to the script)
 
 Alternative commands:
-- Backend (hot-reload with air): `npm run dev:backend` — runs in `src-tauri/go-backend`
-- Frontend (Vite): `npm run dev`
-- Tauri (dev): `npm run dev:tauri`
-- All together (concurrently): `npm run dev:all`
+- Frontend only (Vite): `npm run dev`
+- Tauri with integrated backend: `npm run dev:tauri`
 
-Before running the backend manually:
-- `cd src-tauri/go-backend && go mod tidy`
-- To build the backend binary: `cd src-tauri/go-backend && go build -o s3deck-backend .`
+Prerequisites:
+- Node.js 18+ and npm
+- Rust toolchain (for Tauri)
 
 ## npm scripts (from package.json)
 - `npm run dev` — run Vite (frontend)
 - `npm run build` — build frontend
 - `npm run preview` — preview built frontend
 - `npm run tauri` — run Tauri CLI
-- `npm run dev:backend` — run Go backend with `air`
-- `npm run dev:tauri` — `tauri dev`
-- `npm run dev:all` — concurrently runs backend + tauri
+- `npm run dev:tauri` — run Tauri with integrated Rust backend (includes Vite)
 - `npm run start` — alias to `./dev.sh`
 
-## Backend — API & configuration
-The Go backend listens on port `8082` by default and exposes the following endpoints:
-- `GET /buckets` — returns configured buckets (from the configuration file)
-- `GET /objects?bucket=<bucketId>&prefix=<prefix>` — returns objects and folders (common prefixes) for the given bucket
-- `POST /add-bucket` — adds a new bucket configuration (JSON body)
+## Tauri Commands & Configuration
+The Rust backend provides the following Tauri commands for frontend-backend communication:
+- `get_buckets` — returns configured buckets (from the configuration file)
+- `add_bucket` — adds a new bucket configuration
+- `update_bucket` — updates an existing bucket configuration
+- `delete_bucket_config` — removes a bucket configuration
+- `get_bucket` — retrieves a specific bucket configuration
+- `list_objects` — returns objects and folders for the given bucket and prefix
+- `delete_object` — deletes a file or folder from S3
+- `get_object_metadata` — retrieves detailed object information
+- `upload_files` — uploads files/folders to S3 bucket
+- `count_files` — counts files for upload progress tracking
 
 Configuration example (stored in `~/.s3deck/config.json`):
 {
@@ -71,56 +73,61 @@ Config file location:
 Security note: `accessKey` and `secretKey` are stored in plain text in this file. For production use consider encrypting the file or using a system credential store.
 
 ## How the backend works (implementation notes)
-The backend has been refactored into a modular architecture:
-- **Entry point**: `src-tauri/go-backend/main.go` — server initialization and routing
-- **HTTP handlers**: `src-tauri/go-backend/handlers.go` — request processing and validation
-- **S3 operations**: `src-tauri/go-backend/s3client.go` — AWS SDK v2 integration
-- **Configuration**: `src-tauri/go-backend/config.go` — config file management
-- **Data models**: `src-tauri/go-backend/models.go` — request/response structures
-- **Utilities**: `src-tauri/go-backend/utils.go` — helper functions
+The backend is built as a pure Rust Tauri application with modular architecture:
+- **Entry point**: `src-tauri/src/main.rs` — calls library entry point
+- **Library setup**: `src-tauri/src/lib.rs` — Tauri app initialization and command registration
+- **Tauri commands**: `src-tauri/src/commands.rs` — command handlers for frontend IPC communication
+- **S3 operations**: `src-tauri/src/s3_client.rs` — AWS SDK for Rust integration
+- **Configuration**: `src-tauri/src/config.rs` — config file management
+- **Data models**: `src-tauri/src/models.rs` — request/response structures and error types
 
 Key features:
-- Uses AWS SDK for Go v2 to connect to S3-compatible services
+- Uses AWS SDK for Rust to connect to S3-compatible services
 - For custom endpoints (MinIO or other S3-compatible hosts) the `endpoint` field in the bucket config is used
-- The backend adds a small, random `id` for new bucket configurations
-- CORS is set permissively (`Access-Control-Allow-Origin: *`) to simplify local development
-- Consistent JSON error responses with proper HTTP status codes
-- UTC timestamps are sent as raw values for proper timezone handling in frontend
+- The backend generates random UUIDs for new bucket configurations
+- Direct IPC communication between frontend and backend (no HTTP server needed)
+- Proper error handling with custom error types that serialize for frontend consumption
+- UTC timestamps with proper timezone handling
+- Recursive directory upload support with progress tracking
 
 ## Frontend — important notes
-- Frontend calls the backend at `http://localhost:8082` (hard-coded in several files, e.g. `src/App.jsx`). Ensure the backend runs on that port in development.
-- UI code is in `src/components/` (examples: `BucketsTable.jsx`, `ObjectsTable.jsx`, `AddBucketModal.jsx`).
-- Built with React + Vite + Tailwind.
+- Frontend communicates with the Rust backend via Tauri's `invoke()` function (imported from `@tauri-apps/api/core`)
+- All S3 operations are performed through Tauri commands - no HTTP requests needed
+- UI code is in `src/components/` (examples: `BucketsTable.jsx`, `ObjectsTable.jsx`, `AddBucketModal.jsx`)
+- Built with React + Vite + Tailwind
+- Upload functionality supports drag & drop of files and folders with Tauri's native file handling
 
 ## Building and releasing
-1. Build the backend binary (optional, for bundling):
-   - `cd src-tauri/go-backend && go build -o go-s3-browser main.go`
-2. Build the frontend:
+1. Build the frontend:
    - `npm run build`
-3. Build a desktop package with Tauri (requires Rust toolchain and Tauri CLI):
+2. Build a desktop package with Tauri (requires Rust toolchain and Tauri CLI):
    - `npm run tauri build`
 
-You can include the compiled Go binary in the final distribution if you want the backend bundled.
+This creates platform-specific installers in `src-tauri/target/release/bundle/` with the Rust backend integrated.
 
 ## Troubleshooting & common problems
-- Backend doesn't start:
-  - `cd src-tauri/go-backend && go mod tidy`
-  - Run `air` (if using hot reload) or `go run main.go`
-- Port 8082 busy:
-  - `lsof -ti:8082 | xargs kill -9` or `lsof -i :8082` to find the process
-- `air` not found:
-  - `go install github.com/cosmtrek/air@latest` (or use the project's specified version)
-- Frontend cannot reach backend:
-  - Confirm backend is running and listening on port 8082; check that frontend is calling the correct URL
+- Development environment doesn't start:
+  - Ensure Node.js 18+ and Rust toolchain are installed
+  - Run `npm install` to install dependencies
+  - Port 1420 (Vite) busy: `lsof -ti:1420 | xargs kill -9`
+- Tauri compilation errors:
+  - Check `src-tauri/Cargo.toml` for correct dependencies
+  - Run `cd src-tauri && cargo check` to verify Rust compilation
+- Frontend cannot communicate with backend:
+  - Verify Tauri commands are registered in `src-tauri/src/lib.rs`
+  - Check that frontend uses `invoke()` from `@tauri-apps/api/core`
 - Tauri build issues:
   - Ensure Rust (stable), `cargo` and `@tauri-apps/cli` are installed
+  - For cross-platform builds: `rustup target add <target-triple>`
 
 ## Development guidelines & testing
-- When adding or changing backend endpoints:
-  - Update the expected JSON shapes used by the frontend
-  - Keep CORS requirements in mind (the backend currently allows all origins for dev)
+- When adding or changing Tauri commands:
+  - Add command handlers to `src-tauri/src/commands.rs`
+  - Register new commands in `src-tauri/src/lib.rs` invoke_handler
+  - Update frontend to use `invoke('command_name', { params })` pattern
+  - Ensure proper error handling with serializable error types
 - Configuration changes (adding/removing buckets) are persisted to `~/.s3deck/config.json` — test add/remove operations locally
-- Consider adding unit tests around parsing and config handling for the backend when expanding functionality
+- Consider adding unit tests for Rust backend functionality and integration tests for frontend-backend communication
 
 ## Security
 - Do not commit credentials to the repository.
@@ -130,18 +137,20 @@ You can include the compiled Go binary in the final distribution if you want the
 ## Quick file map — useful files to inspect
 - `src/App.jsx` — main frontend component
 - `src/components/*` — UI components
-- `src-tauri/go-backend/main.go` — backend entry point and server setup
-- `src-tauri/go-backend/handlers.go` — HTTP request handlers
-- `src-tauri/go-backend/s3client.go` — S3 operations
-- `src-tauri/go-backend/README.md` — detailed backend documentation
-- `src-tauri/Cargo.toml` — Tauri configuration (Rust)
+- `src/hooks/useS3Operations.js` — S3 operations hooks using Tauri invoke
+- `src/hooks/useUpload.js` — Upload functionality with drag & drop support
+- `src-tauri/src/lib.rs` — Tauri app setup and command registration
+- `src-tauri/src/commands.rs` — Tauri command handlers
+- `src-tauri/src/s3_client.rs` — S3 operations using AWS SDK for Rust
+- `src-tauri/src/models.rs` — Data structures and error types
+- `src-tauri/Cargo.toml` — Rust dependencies and Tauri configuration
 - `dev.sh` — convenience script to run the dev environment
 
 ## Notes for assistant agents (Claude)
 - Use this file as a quick reference for running the project, debugging common issues, and locating primary integration points.
-- If asked to modify behavior related to buckets/objects, check the modular backend files:
-  - `src-tauri/go-backend/handlers.go` for HTTP request handling
-  - `src-tauri/go-backend/s3client.go` for S3 operations
-  - `src-tauri/go-backend/models.go` for data structures
+- If asked to modify behavior related to buckets/objects, check the Rust backend files:
+  - `src-tauri/src/commands.rs` for Tauri command handlers
+  - `src-tauri/src/s3_client.rs` for S3 operations
+  - `src-tauri/src/models.rs` for data structures
   - Corresponding frontend components in `src/components/`
-- The backend is now modular for better maintainability — see `src-tauri/go-backend/README.md` for detailed architecture.
+- The backend is implemented in pure Rust using Tauri's IPC system for frontend-backend communication.

@@ -25,27 +25,13 @@ jobs:
         platform: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.21"
-          
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('src-tauri/go-backend/go.sum', 'src-tauri/go-backend/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -64,15 +50,6 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Install Go backend dependencies
-        working-directory: src-tauri/go-backend
-        run: go mod download
-
-      - name: Make build script executable (Unix only)
-        if: matrix.platform != 'windows-latest'
-        working-directory: src-tauri/go-backend
-        run: chmod +x build.sh
-
       - name: Get version
         id: get_version
         shell: bash
@@ -80,7 +57,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
           echo "Version: v$VERSION"
-          
+
       - name: Delete existing draft release
         if: github.ref == 'refs/heads/main' && matrix.platform == 'macos-latest'
         env:
@@ -88,22 +65,22 @@ jobs:
         run: |
           VERSION="v$(node -p "require('./package.json').version")"
           echo "Checking for existing release with tag: $VERSION"
-          
+
           # Get release ID if it exists
           RELEASE_ID=$(gh api repos/${{ github.repository }}/releases --jq ".[] | select(.tag_name == \"$VERSION\") | .id" || echo "")
-          
+
           if [ -n "$RELEASE_ID" ]; then
             echo "Found existing release with ID: $RELEASE_ID"
             echo "Deleting existing release..."
             gh api -X DELETE repos/${{ github.repository }}/releases/$RELEASE_ID || echo "Failed to delete release"
-            
+
             # Also delete the tag if it exists
             echo "Deleting tag: $VERSION"
             git push --delete origin $VERSION || echo "Tag does not exist or failed to delete"
           else
             echo "No existing release found"
           fi
-          
+
           # Wait a bit for GitHub to process the deletion
           sleep 5
 

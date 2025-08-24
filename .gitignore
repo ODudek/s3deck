@@ -38,10 +38,8 @@ src-tauri/gen/
 go.work
 go.work.sum
 
-# Go backend binaries
-src-tauri/go-backend/s3deck-backend*
-src-tauri/go-backend/go-s3-browser*
-src-tauri/go-backend/tmp/go-s3-browser*
+# Rust backend binaries
+src-tauri/target/
 
 # Sensitive configuration files
 config.json
