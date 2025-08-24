@@ -5,7 +5,8 @@
   "identifier": "com.adudek4.s3deck",
   "build": {
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build && cd src-tauri/go-backend && node build.cjs",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -31,8 +32,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [
-      "go-backend/s3deck-backend*"
-    ]
+    "resources": []
   }
 }
