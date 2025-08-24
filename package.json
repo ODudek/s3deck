@@ -1,15 +1,17 @@
 {
   "name": "s3deck",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build", 
+    "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "dev:tauri": "tauri dev",
-    "start": "npm run dev:tauri"
+    "start": "npm run dev:tauri",
+    "release-notes": "node scripts/generate-release-notes.cjs",
+    "release-notes:version": "node scripts/generate-release-notes.cjs --version"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

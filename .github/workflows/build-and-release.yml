@@ -50,13 +50,19 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Get version
+      - name: Get version and generate release notes
         id: get_version
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "VERSION=v$VERSION" >> $GITHUB_OUTPUT
           echo "Version: v$VERSION"
+
+          # Generate release notes from changelog
+          RELEASE_NOTES=$(npm run release-notes --silent)
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Delete existing draft release
         if: github.ref == 'refs/heads/main' && matrix.platform == 'macos-latest'
@@ -92,35 +98,7 @@ jobs:
         with:
           tagName: ${{ steps.get_version.outputs.VERSION }}
           releaseName: "S3 Deck ${{ steps.get_version.outputs.VERSION }}"
-          releaseBody: |
-            ## 🚀 S3 Deck ${{ steps.get_version.outputs.VERSION }}
-
-            Auto-generated release from main branch.
-
-            ## 📦 Downloads
-
-            Choose the appropriate file for your platform:
-
-            ### Windows
-            - `S3Deck_*_x64_en-US.msi` - Windows Installer
-            - `S3Deck.exe` - Portable executable
-
-            ### macOS
-            - `S3Deck_*_aarch64.dmg` - Apple Silicon (M1/M2/M3)
-            - `S3Deck_*_x64.dmg` - Intel Macs
-
-            ### Linux
-            - `S3Deck_*_amd64.AppImage` - AppImage (Universal)
-            - `S3Deck_*_amd64.deb` - Debian/Ubuntu package
-
-            ## 🔧 What's New
-
-            - Cross-platform S3 bucket management
-            - Drag & drop file uploads with progress tracking
-            - Dark/Light mode support
-            - Multi-bucket configuration
-            - Real-time file browser
-            - Upload error handling and retry
+          releaseBody: ${{ steps.get_version.outputs.RELEASE_NOTES }}
           releaseDraft: false
           prerelease: false
           includeUpdaterJson: false
