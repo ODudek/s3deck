@@ -9,6 +9,7 @@ import ContextMenu from "./ContextMenu";
 import AddBucketModal from "./AddBucketModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import PropertiesModal from "./PropertiesModal";
+import RenameModal from "./RenameModal";
 import NotificationBanner from './ui/NotificationBanner';
 import UploadProgress from './ui/UploadProgress';
 import ConfigView from './ConfigView';
@@ -27,6 +28,7 @@ export default function AppContent() {
   const [contextMenu, setContextMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
+  const [renameItem, setRenameItem] = useState(null);
 
   // Initialize theme
   useTheme();
@@ -102,6 +104,8 @@ export default function AppContent() {
     } else if (action === 'properties' && item) {
       modals.openPropertiesModal(item);
       s3Operations.loadMetadata(item);
+    } else if (action === 'rename' && item) {
+      setRenameItem(item);
     } else if (action === 'edit' && item) {
       // TODO: Implement edit functionality
     }
@@ -178,6 +182,28 @@ export default function AppContent() {
   const handlePropertiesClose = () => {
     modals.closePropertiesModal();
     s3Operations.clearMetadata();
+  };
+
+  // Rename handlers
+  const handleRename = async (newName) => {
+    if (!renameItem) return;
+
+    const success = await s3Operations.renameObject(
+      renameItem,
+      newName,
+      notifications.showSuccess,
+      notifications.showError,
+      loadObjectsWithNavigation,
+      navigation.currentPathRef
+    );
+
+    if (success) {
+      setRenameItem(null);
+    }
+  };
+
+  const handleRenameClose = () => {
+    setRenameItem(null);
   };
 
   // Upload handlers
@@ -289,6 +315,14 @@ export default function AppContent() {
         metadata={s3Operations.metadata}
         isLoading={s3Operations.isLoadingMetadata}
         error={s3Operations.metadataError}
+      />
+
+      <RenameModal
+        isOpen={!!renameItem}
+        onClose={handleRenameClose}
+        item={renameItem}
+        onRename={handleRename}
+        isRenaming={s3Operations.isRenaming}
       />
 
       {/* Notifications - positioned at bottom right */}

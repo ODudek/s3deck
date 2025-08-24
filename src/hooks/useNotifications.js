@@ -25,6 +25,7 @@ export const useNotifications = () => {
   const showSuccess = (text) => showNotification(text, "success");
   const showError = (text) => showNotification(text, "error");
   const showInfo = (text) => showNotification(text, "info");
+  const showWarning = (text) => showNotification(text, "warning");
 
   const clearNotification = () => {
     setMessage("");
@@ -51,6 +52,7 @@ export const useNotifications = () => {
     showSuccess,
     showError,
     showInfo,
+    showWarning,
     clearNotification
   };
 };

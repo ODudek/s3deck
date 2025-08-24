@@ -14,15 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved upload progress tracking and error reporting
 - Better file size validation and formatting
 - Debug mode toggle in settings for development
+### Added
+- File and folder rename functionality with smart content-type detection
+- Support for changing file extensions during rename (automatically updates MIME type)
+- Comprehensive filename validation with cross-platform compatibility
+- Bulk folder renaming that preserves internal file structure
+- Rename option in context menu for all objects
+- Simplified notification messages showing only file/folder names instead of full paths
+- Warning notification type with appropriate styling and icon
 
 ### Changed
 - Migrated from Go backend to pure Rust/Tauri implementation
 - Updated GitHub Actions workflows to remove Go dependencies
 - Improved error handling and logging
-- Replaced HTTP-based backend with Tauri IPC commands
-- Improved error messages and user feedback
-- Enhanced file upload reliability
-- Better handling of large file uploads
 
 ### Removed
 - Go backend implementation and dependencies

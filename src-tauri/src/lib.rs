@@ -1,7 +1,8 @@
-mod models;
-mod config;
-mod s3_client;
 mod commands;
+mod config;
+mod content_type;
+mod models;
+mod s3_client;
 
 use commands::*;
 
@@ -22,6 +23,7 @@ pub fn run() {
             get_object_metadata,
             upload_files,
             count_files,
+            rename_object,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

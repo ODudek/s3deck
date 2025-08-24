@@ -92,23 +92,40 @@ pub struct ObjectMetadata {
     pub metadata: std::collections::HashMap<String, String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RenameRequest {
+    pub bucket_id: String,
+    pub old_key: String,
+    pub new_key: String,
+    pub is_folder: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RenameResponse {
+    pub message: String,
+    pub old_key: String,
+    pub new_key: String,
+    pub moved_files: Option<Vec<String>>,
+    pub total_moved: Option<i32>,
+}
+
 #[derive(Debug, thiserror::Error, Serialize)]
 pub enum S3DeckError {
     #[error("Configuration error: {0}")]
     Config(String),
-    
+
     #[error("S3 error: {0}")]
     S3(String),
-    
+
     #[error("IO error: {0}")]
     Io(String),
-    
+
     #[error("Serialization error: {0}")]
     Serialization(String),
-    
+
     #[error("Bucket not found: {0}")]
     BucketNotFound(String),
-    
+
     #[error("Invalid path: {0}")]
     InvalidPath(String),
 }
