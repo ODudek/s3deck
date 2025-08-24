@@ -20,11 +20,11 @@ const formatLastModified = (lastModified) => {
 // Helper function to format file size
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 B';
-  
+
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
@@ -41,21 +41,20 @@ export default function ObjectsTable({
   refreshObjects
 }) {
   const { settings } = useSettings();
-  
+
   // Auto-refresh functionality
   useAutoRefresh(refreshObjects, [objects]);
-  
-  console.log('ObjectsTable rendered with onDrop:', typeof onDrop);
+
+
 
   // Listen for Tauri drag and drop events
   React.useEffect(() => {
-    console.log('Setting up Tauri drag and drop listeners...');
+
 
     const setupTauriListeners = async () => {
       try {
         // Listen for drag enter
         await listen('tauri://drag-enter', (event) => {
-          console.log('Tauri: drag-enter', event);
           setIsDragOver(true);
         });
 
@@ -71,22 +70,16 @@ export default function ObjectsTable({
 
         // Listen for file drop
         await listen('tauri://drag-drop', (event) => {
-          console.log('Tauri: drag-drop', event);
-          console.log('Event payload:', event.payload);
-          console.log('Payload paths:', event.payload?.paths);
           setIsDragOver(false);
 
           // Extract file paths from Tauri payload
           const filePaths = event.payload?.paths || [];
           if (filePaths.length > 0) {
-            console.log('Calling handleTauriFileDrop with paths:', filePaths);
             handleTauriFileDrop(filePaths);
-          } else {
-            console.log('No files in payload');
           }
         });
 
-        console.log('Tauri drag and drop listeners set up successfully');
+
       } catch (error) {
         console.error('Error setting up Tauri listeners:', error);
       }
@@ -96,9 +89,6 @@ export default function ObjectsTable({
   }, []);
 
   const handleTauriFileDrop = async (filePaths) => {
-    console.log('handleTauriFileDrop called with:', filePaths);
-    console.log('onDrop function available:', typeof onDrop);
-
     if (!onDrop) {
       console.error('No onDrop handler provided');
       return;
@@ -106,11 +96,9 @@ export default function ObjectsTable({
 
     try {
       setIsDragOver(false);
-      console.log('About to call onDrop with filePaths and tauri source');
 
       // Call the Tauri-specific upload function
-      const result = await onDrop(filePaths, 'tauri');
-      console.log('onDrop result:', result);
+      await onDrop(filePaths, 'tauri');
 
     } catch (error) {
       console.error('Error processing Tauri file drop:', error);
@@ -125,31 +113,28 @@ export default function ObjectsTable({
         return false;
       }
     }
-    
+
     // Filter hidden files based on settings
     if (!settings.showHiddenFiles && item.name.startsWith('.')) {
       return false;
     }
-    
+
     return true;
   });
 
   const handleDragOver = (e) => {
-    console.log('ObjectsTable: DragOver event', e.target);
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragEnter = (e) => {
-    console.log('ObjectsTable: DragEnter event', e.target);
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e) => {
-    console.log('ObjectsTable: DragLeave event', e.target);
     e.preventDefault();
     e.stopPropagation();
     if (!e.currentTarget.contains(e.relatedTarget)) {
@@ -158,9 +143,6 @@ export default function ObjectsTable({
   };
 
   const handleDrop = (e) => {
-    console.log('ObjectsTable: Drop event received', e.target);
-    console.log('Files in dataTransfer:', e.dataTransfer.files.length);
-    console.log('Items in dataTransfer:', e.dataTransfer.items.length);
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
