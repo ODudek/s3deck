@@ -244,7 +244,7 @@ export default function ConfigView({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white rounded-lg max-w-md w-full mx-4 shadow-2xl transform transition-all duration-200 scale-100">
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
@@ -281,7 +281,7 @@ export default function ConfigView({
 
       {/* Edit Bucket Modal */}
       {editingBucket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] mx-4 overflow-y-auto shadow-2xl transform transition-all duration-200 scale-100">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">

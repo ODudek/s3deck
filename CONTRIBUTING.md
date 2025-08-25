@@ -64,7 +64,7 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 
 ## Bug Reports
 
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/adudek4/s3deck/issues/new).
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/ODudek/s3deck/issues/new).
 
 **Great Bug Reports** tend to have:
 
@@ -136,7 +136,7 @@ s3deck/
 
 ## Community
 
-- Follow our [Code of Conduct](https://github.com/adudek4/s3deck/blob/main/CODE_OF_CONDUCT.md)
+- Follow our [Code of Conduct](https://github.com/ODudek/s3deck/blob/main/CODE_OF_CONDUCT.md)
 - Be respectful and constructive in discussions
 - Help others in issues and discussions
 - Share your use cases and feedback
@@ -151,8 +151,8 @@ Contributors will be recognized in:
 ## Questions?
 
 Don't hesitate to ask questions in:
-- [GitHub Issues](https://github.com/adudek4/s3deck/issues) for bugs and features
-- [GitHub Discussions](https://github.com/adudek4/s3deck/discussions) for general questions
+- [GitHub Issues](https://github.com/ODudek/s3deck/issues) for bugs and features
+- [GitHub Discussions](https://github.com/ODudek/s3deck/discussions) for general questions
 
 ## License
 

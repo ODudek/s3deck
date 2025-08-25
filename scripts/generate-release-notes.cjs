@@ -152,48 +152,62 @@ class ChangelogParser {
     });
 
     // Add download instructions
-    notes += this.generateDownloadInstructions();
+    notes += this.generateDownloadInstructions(versionData);
 
     return notes.trim();
   }
 
   /**
    * Generate download instructions for release
+   * @param {object} versionData - Version data containing version number
    * @returns {string} - Download instructions
    */
-  generateDownloadInstructions() {
-    return `## 📦 Downloads
+  generateDownloadInstructions(versionData) {
+    return `## 🚀 Easy Installation
 
-Choose the appropriate file for your platform:
+**One-line installer for all platforms (Recommended):**
 
-### Windows
-- \`S3Deck_*_x64_en-US.msi\` - Windows Installer (Recommended)
-- \`S3Deck.exe\` - Portable executable
+\`\`\`bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
 
-### macOS
-- \`S3Deck_*_aarch64.dmg\` - Apple Silicon (M1/M2/M3)
-- \`S3Deck_*_x64.dmg\` - Intel Macs
+# Install this specific version
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v${versionData?.version || 'X.Y.Z'}
+\`\`\`
 
-### Linux
-- \`S3Deck_*_amd64.AppImage\` - AppImage (Universal)
-- \`S3Deck_*_amd64.deb\` - Debian/Ubuntu package
+**This installer will:**
+- ✅ Auto-detect your OS and architecture
+- ✅ Download the correct binary from this release
+- ✅ Fix macOS security issues automatically
+- ✅ Install to the right location for your platform
+- ✅ No prerequisites required - just works!
 
-## 🔧 Installation
+## 📦 Manual Download
 
-1. Download the appropriate file for your platform
-2. Run the installer or extract the portable version
-3. Configure your S3 buckets in the settings
-4. Start managing your S3 storage!
+Alternatively, choose the file for your platform:
+
+### 🪟 Windows
+- \`*.msi\` - Windows Installer
+
+### 🍎 macOS  
+- \`*_aarch64.dmg\` - Apple Silicon (M1/M2/M3/M4)
+- \`*_x64.dmg\` - Intel Macs
+
+### 🐧 Linux
+- \`*.AppImage\` - Universal Linux binary
+- \`*.deb\` - Debian/Ubuntu package
+
+> **macOS Note**: If you see "app is damaged", it's normal for unsigned apps. Use the installer above or run: \`xattr -cr S3Deck.app\`
 
 ## 💡 Need Help?
 
-- 📖 Check the [Documentation](https://github.com/adudek4/s3deck/blob/main/README.md)
-- 🐛 Report issues on [GitHub Issues](https://github.com/adudek4/s3deck/issues)
-- 💬 Join discussions in [GitHub Discussions](https://github.com/adudek4/s3deck/discussions)
+- 📖 [Documentation](https://github.com/ODudek/s3deck/blob/main/README.md)
+- 🐛 [Report Issues](https://github.com/ODudek/s3deck/issues)
+- 💬 [Discussions](https://github.com/ODudek/s3deck/discussions)
 
 ---
 
-**Full Changelog**: https://github.com/adudek4/s3deck/blob/main/CHANGELOG.md
+**Full Changelog**: https://github.com/ODudek/s3deck/blob/main/CHANGELOG.md
 `;
   }
 

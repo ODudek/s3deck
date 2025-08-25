@@ -19,7 +19,7 @@ export default function Sidebar({
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -27,7 +27,7 @@ export default function Sidebar({
       {/* Sidebar */}
       <div className={`${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } fixed inset-y-0 left-0 z-50 w-56 bg-slate-800 dark:bg-gray-900 text-white flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      } fixed inset-y-0 left-0 z-50 w-56 bg-gray-800 dark:bg-gray-900 text-white flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
         {/* Logo Section */}
         <div className="p-3">
           <div className="flex items-center space-x-2">
@@ -39,11 +39,11 @@ export default function Sidebar({
         {/* Navigation */}
         <nav className="flex-1 px-3 space-y-1">
           <div className="mb-2">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Storage</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Storage</h3>
             <button
               onClick={() => handleNavClick("buckets")}
               className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ${
-                activeView === "buckets" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
+                activeView === "buckets" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
               }`}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -55,7 +55,7 @@ export default function Sidebar({
               <button
                 onClick={() => handleNavClick("objects")}
                 className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ml-3 mt-0.5 ${
-                  activeView === "objects" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
+                  activeView === "objects" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
                 }`}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -67,11 +67,11 @@ export default function Sidebar({
           </div>
 
           <div className="mb-2">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Settings</h3>
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Settings</h3>
             <button
               onClick={() => handleNavClick("config")}
               className={`w-full text-left px-3 py-1.5 rounded transition-colors duration-200 flex items-center space-x-2 ${
-                activeView === "config" ? "bg-blue-600 text-white" : "text-slate-300 hover:bg-slate-700"
+                activeView === "config" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"
               }`}
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

@@ -1,47 +1,36 @@
-name: Tag Release
+name: Build and Release
 
 on:
   push:
     tags:
       - "v*"
 
-env:
-  CARGO_TERM_COLOR: always
-
 permissions:
   contents: write
-  actions: write
-  packages: write
-  pull-requests: write
-
-concurrency:
-  group: tag-release-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
-  build-and-release:
-    name: Build and Release (${{ matrix.platform }} - ${{ matrix.arch }})
-    runs-on: ${{ matrix.platform }}
-
+  release:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
-            args: '--target aarch64-apple-darwin'
-            arch: 'aarch64'
-          - platform: 'macos-latest'
-            args: '--target x86_64-apple-darwin'
-            arch: 'x86_64'
-          - platform: 'ubuntu-latest'
-            args: ''
-            arch: 'x86_64'
-          - platform: 'windows-latest'
-            args: ''
-            arch: 'x86_64'
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+            arch: "aarch64"
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+            arch: "x86_64"
+          - platform: "ubuntu-22.04"
+            args: ""
+            arch: "x86_64"
+          - platform: "windows-latest"
+            args: ""
+            arch: "x86_64"
 
+    runs-on: ${{ matrix.platform }}
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,7 +38,7 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Install Rust stable
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
@@ -59,8 +48,8 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
-      - name: Install dependencies (Ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+      - name: Install dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
@@ -68,51 +57,45 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Get tag name and generate release notes
-        id: tag
-        run: |
-          TAG_NAME=${GITHUB_REF#refs/*/}
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-
-          # Extract version number from tag (remove 'v' prefix)
-          VERSION=${TAG_NAME#v}
-
-          # Generate release notes from changelog
-          RELEASE_NOTES=$(npm run release-notes:version $VERSION --silent)
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Build and Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ steps.tag.outputs.TAG_NAME }}
-          releaseName: "S3 Deck ${{ steps.tag.outputs.TAG_NAME }}"
-          releaseBody: ${{ steps.tag.outputs.RELEASE_NOTES }}
+          tagName: ${{ github.ref_name }}
+          releaseName: "S3 Deck ${{ github.ref_name }}"
+          releaseBody: |
+            ## 🚀 Easy Installation
+
+            **One-line installer for all platforms:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
+
+            # Or install specific version
+            curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v ${{ github.ref_name }}
+            ```
+
+            **This installer will:**
+            - ✅ **Detect your platform** automatically
+            - ✅ **Download the correct binary** from this release
+            - ✅ **Fix macOS security issues** automatically
+            - ✅ **Install to the right location** for your OS
+            - ✅ **Create shortcuts** and verify installation
+            - ✅ **No prerequisites required** - just works!
+
+            ## 📦 Manual Download
+
+            You can also download directly:
+            - 🪟 **Windows**: Download `.msi` installer
+            - 🍎 **macOS Intel**: Download `.dmg` for x64
+            - 🍎 **macOS Apple Silicon**: Download `.dmg` for aarch64
+            - 🐧 **Linux**: Download `.AppImage` or `.deb`
+
+            **Note for macOS users:** If you see "app is damaged" - this is normal for unsigned apps. The installer fixes this automatically, or you can run: `xattr -cr S3Deck.app`
+
+            ---
+
+            See [CHANGELOG.md](https://github.com/ODudek/s3deck/blob/main/CHANGELOG.md) for detailed changes.
           releaseDraft: false
           prerelease: false
-          includeDebug: false
           args: ${{ matrix.args }}
-
-      - name: Fix macOS bundle (remove quarantine)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          # Find and fix all .app bundles
-          find src-tauri/target -name "*.app" -type d | while read app_bundle; do
-            echo "Fixing bundle: $app_bundle"
-            xattr -cr "$app_bundle" || true
-            # Verify the fix
-            if xattr -l "$app_bundle" | grep -q quarantine; then
-              echo "Warning: Quarantine attribute still present in $app_bundle"
-            else
-              echo "✅ Fixed macOS bundle: $app_bundle"
-            fi
-          done
-          
-          # Also fix any DMG files
-          find src-tauri/target -name "*.dmg" | while read dmg_file; do
-            echo "Fixing DMG: $dmg_file"
-            xattr -cr "$dmg_file" || true
-          done

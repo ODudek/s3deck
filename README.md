@@ -18,9 +18,11 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 - **File Properties**: View detailed metadata and object information
 - **Folder Operations**: Create, navigate, and manage folders
 - **Search & Filter**: Find files quickly with built-in search
-- **Context Menus**: Right-click actions for files and folders
+- **Smart Context Menus**: Right-click actions with intelligent positioning
+- **File & Folder Rename**: Rename files and folders with smart content-type detection
 - **Settings Management**: Customizable app preferences
 - **Upload Progress**: Real-time upload status and error reporting
+- **Modern UI**: Built with Tailwind CSS v4 for enhanced performance and styling
 
 ## 🚀 Quick Start
 
@@ -31,9 +33,61 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 
 ### Installation
 
+## 🚀 **One-Line Universal Installer**
+
+**Works on all platforms - no prerequisites required:**
+
+```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
+
+# Install specific version
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v0.2.0
+```
+
+**This installer will:**
+- ✅ **Auto-detect** your OS and architecture
+- ✅ **Download** the correct pre-built binary
+- ✅ **Fix macOS security warnings** automatically
+- ✅ **Install** to the right location for your platform
+- ✅ **Create shortcuts** and verify installation
+- ✅ **No prerequisites** - just works out of the box!
+
+**Installation locations:**
+- 🍎 **macOS**: `/Applications/S3Deck.app` 
+- 🐧 **Linux**: `~/.local/bin/s3deck` + desktop entry
+- 🪟 **Windows**: Launches MSI installer
+
+## 📦 **Manual Download**
+
+Alternatively, download directly from [Releases](https://github.com/ODudek/s3deck/releases/latest):
+- 🪟 **Windows**: `.msi` installer
+- 🍎 **macOS Intel**: `.dmg` (x64)
+- 🍎 **macOS Apple Silicon**: `.dmg` (aarch64)
+- 🐧 **Linux**: `.AppImage` or `.deb` packages
+
+> **macOS Note**: If you see "app is damaged" warning, it's normal for unsigned apps. The installer fixes this automatically.
+
+**Manual Installation:**
+
+<details>
+<summary>Click to expand manual installation instructions</summary>
+
+1. Go to [Releases](https://github.com/ODudek/s3deck/releases) and download for your platform
+2. **macOS**: If you see "app is damaged" error, run: `xattr -cr S3Deck.app`
+3. **Windows**: Run the installer (.msi or .exe)
+4. **Linux**: Install the .deb, .rpm, or .AppImage file
+
+</details>
+
+**Build from Source:**
+
+<details>
+<summary>Click to expand build instructions</summary>
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/adudek4/s3deck.git
+   git clone https://github.com/ODudek/s3deck.git
    cd s3deck
    ```
 
@@ -49,6 +103,8 @@ A modern, cross-platform desktop application for managing S3-compatible object s
    ./dev.sh
    ```
 
+</details>
+
 ### Building for Production
 
 Build the desktop application:
@@ -62,11 +118,12 @@ This will create platform-specific installers in `src-tauri/target/release/bundl
 
 S3 Deck uses a modern desktop application architecture:
 
-- **Frontend**: React + Vite + Tailwind CSS
+- **Frontend**: React + Vite + Tailwind CSS v4
 - **Backend**: Rust with AWS S3 SDK
 - **Desktop Shell**: Tauri (Rust-based)
 - **Communication**: Direct Tauri IPC
 - **Configuration**: JSON-based local storage
+- **UI Framework**: Modern responsive design with smart component positioning
 
 ```
 ┌─────────────────┐    ┌──────────────────────────────┐
@@ -150,6 +207,7 @@ The Rust backend provides the following Tauri commands for the frontend:
 | `upload_files` | Upload files to bucket |
 | `delete_object` | Delete object or folder |
 | `get_object_metadata` | Get object metadata |
+| `rename_object` | Rename files and folders |
 | `count_files` | Count files for upload progress |
 
 ## 🎨 Themes
@@ -175,7 +233,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🐛 Bug Reports & Feature Requests
 
-Please use [GitHub Issues](https://github.com/adudek4/s3deck/issues) to report bugs or request features.
+Please use [GitHub Issues](https://github.com/ODudek/s3deck/issues) to report bugs or request features.
 
 ## 🙏 Acknowledgments
 

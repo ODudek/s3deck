@@ -9,7 +9,7 @@ export default function AddBucketModal({
   if (!showAddForm) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-lg max-h-[95vh] overflow-y-auto">
         <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 rounded-t-lg">
           <div className="flex items-center justify-between">
