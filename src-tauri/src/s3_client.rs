@@ -313,6 +313,118 @@ impl S3Client {
         })
     }
 
+    pub async fn create_folder(&self, folder_path: &str) -> Result<String> {
+        // Ensure the folder path ends with '/'
+        let folder_key = if folder_path.ends_with('/') {
+            folder_path.to_string()
+        } else {
+            format!("{}/", folder_path)
+        };
+
+        // Check if folder already exists by trying to head the object
+        match self.client
+            .head_object()
+            .bucket(&self.bucket_name)
+            .key(&folder_key)
+            .send()
+            .await
+        {
+            Ok(_) => {
+                // Folder already exists
+                return Err(S3DeckError::S3(format!(
+                    "Folder '{}' already exists", 
+                    folder_key.trim_end_matches('/')
+                )));
+            }
+            Err(_) => {
+                // Folder doesn't exist, we can proceed to create it
+            }
+        }
+
+        // Also check if there's a folder with the same name by listing objects
+        // This handles cases where the folder might exist as a common prefix
+        let list_response = self.client
+            .list_objects_v2()
+            .bucket(&self.bucket_name)
+            .prefix(&folder_key)
+            .max_keys(1)
+            .send()
+            .await
+            .map_err(|e| S3DeckError::S3(format!("Failed to check existing objects: {}", e)))?;
+
+        // Check if there are any objects with this prefix (meaning folder exists)
+        if list_response.contents().len() > 0 || list_response.common_prefixes().len() > 0 {
+            return Err(S3DeckError::S3(format!(
+                "Folder '{}' already exists", 
+                folder_key.trim_end_matches('/')
+            )));
+        }
+
+        // Create an empty object with the folder key to represent the folder
+        let body = ByteStream::from(vec![]);
+
+        self.client
+            .put_object()
+            .bucket(&self.bucket_name)
+            .key(&folder_key)
+            .content_type("application/x-directory")
+            .body(body)
+            .send()
+            .await
+            .map_err(|e| S3DeckError::S3(format!("Failed to create folder: {}", e)))?;
+
+        Ok(format!("Folder '{}' created successfully", folder_key.trim_end_matches('/')))
+    }
+
+    pub async fn get_folder_latest_modified(&self, folder_prefix: &str) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+        let mut latest_modified: Option<chrono::DateTime<chrono::Utc>> = None;
+        let mut continuation_token = None;
+
+        loop {
+            let mut request = self
+                .client
+                .list_objects_v2()
+                .bucket(&self.bucket_name)
+                .prefix(folder_prefix);
+
+            if let Some(token) = continuation_token {
+                request = request.continuation_token(token);
+            }
+
+            let response = request
+                .send()
+                .await
+                .map_err(|e| S3DeckError::S3(format!("Failed to list objects: {}", e)))?;
+
+            for object in response.contents() {
+                if let (Some(key), Some(last_modified)) = (object.key(), object.last_modified()) {
+                    // Skip folder markers
+                    if key.ends_with('/') {
+                        continue;
+                    }
+
+                    let object_date = DateTime::from_timestamp(last_modified.secs(), last_modified.subsec_nanos()).unwrap_or_default();
+                    
+                    match latest_modified {
+                        None => latest_modified = Some(object_date),
+                        Some(current_latest) if object_date > current_latest => {
+                            latest_modified = Some(object_date);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            if response.is_truncated().unwrap_or(false) {
+                continuation_token = response.next_continuation_token().map(|s| s.to_string());
+            } else {
+                break;
+            }
+        }
+
+        Ok(latest_modified)
+    }
+
     async fn rename_folder(&self, old_prefix: &str, new_prefix: &str) -> Result<RenameResponse> {
         // List all objects under the old prefix
         let objects = self.list_all_objects_with_prefix(old_prefix).await?;

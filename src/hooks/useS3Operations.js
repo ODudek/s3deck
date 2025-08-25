@@ -51,6 +51,7 @@ export const useS3Operations = () => {
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [metadataError, setMetadataError] = useState(null);
   const [isRenaming, setIsRenaming] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   const selectedBucketRef = useRef(null);
 
@@ -68,6 +69,16 @@ export const useS3Operations = () => {
         console.error('Error loading buckets:', errorMessage);
       });
   }, []);
+
+  const loadBuckets = async () => {
+    try {
+      const buckets = await invoke('get_buckets');
+      setBuckets(buckets);
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      console.error('Error loading buckets:', errorMessage);
+    }
+  };
 
   const loadObjects = async (bucketId, prefix = "") => {
     setSelectedBucket(bucketId);
@@ -189,6 +200,46 @@ export const useS3Operations = () => {
     setMetadataError(null);
   };
 
+  const createFolder = async (folderName, currentPathRef, onSuccess, onError, refreshCallback) => {
+    if (!folderName) return { success: false, error: 'Folder name is required' };
+
+    setIsCreatingFolder(true);
+    const bucket = selectedBucketRef.current;
+    const currentPath = currentPathRef?.current || '';
+
+    try {
+      // Calculate the full folder path
+      let folderPath;
+      if (currentPath) {
+        folderPath = currentPath.endsWith('/') 
+          ? currentPath + folderName 
+          : currentPath + '/' + folderName;
+      } else {
+        folderPath = folderName;
+      }
+
+      const result = await invoke('create_folder', {
+        bucketId: bucket,
+        folderPath: folderPath
+      });
+
+      onSuccess(result);
+
+      // Refresh the objects list
+      if (refreshCallback) {
+        refreshCallback(bucket, currentPath);
+      } else {
+        loadObjects(bucket, currentPath);
+      }
+      return { success: true, error: null };
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
   const renameObject = async (item, newName, onSuccess, onError, refreshCallback, currentPathRef) => {
     if (!item || !newName) return false;
 
@@ -261,16 +312,19 @@ export const useS3Operations = () => {
     isAdding,
     isDeleting,
     isRenaming,
+    isCreatingFolder,
     metadata,
     isLoadingMetadata,
     metadataError,
     selectedBucketRef,
 
     // Actions
+    loadBuckets,
     loadObjects,
     addBucketConfig,
     deleteObject,
     renameObject,
+    createFolder,
     loadMetadata,
     clearMetadata,
     setSelectedBucket,

@@ -13,11 +13,12 @@ export default function Header({
   loadObjects,
   navigateBack,
   setShowAddForm,
-  handleFolderUpload
+  handleFolderUpload,
+  onCreateFolder
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 py-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         {/* Mobile menu button */}
         <button
           type="button"
@@ -34,32 +35,6 @@ export default function Header({
              activeView === "config" ? "Configuration" :
              `${buckets.find(b => b.id === selectedBucket)?.displayName || buckets.find(b => b.id === selectedBucket)?.name || 'Bucket'}`}
           </h2>
-          {activeView === "objects" && (
-            <div className="flex items-center mt-1 space-x-1 overflow-x-auto">
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  loadObjects(selectedBucket, "");
-                }}
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-xs"
-              >
-                {buckets.find(b => b.id === selectedBucket)?.displayName || buckets.find(b => b.id === selectedBucket)?.name}
-              </button>
-              {getBreadcrumbs().map((part, index) => (
-                <div key={index} className="flex items-center space-x-1">
-                  <svg className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <button
-                    onClick={() => navigateToBreadcrumb(index)}
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-xs"
-                  >
-                    {part}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         <div className="flex items-center space-x-2 ml-3">
           {/* Search Input - only show for buckets and objects views */}
@@ -99,6 +74,16 @@ export default function Header({
           )}
           {activeView === "objects" && (
             <>
+              <button
+                onClick={onCreateFolder}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors duration-200 whitespace-nowrap flex items-center space-x-1"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
+                </svg>
+                <span className="hidden sm:inline">New Folder</span>
+                <span className="sm:hidden">📁+</span>
+              </button>
               <input
                 type="file"
                 id="folderUpload"
@@ -133,6 +118,34 @@ export default function Header({
           )}
         </div>
       </div>
+
+      {/* Breadcrumbs row - only show for objects view */}
+      {activeView === "objects" && (
+        <div className="flex items-center space-x-1 pt-1 pb-2">
+          <button
+            onClick={() => {
+              setSearchQuery("");
+              loadObjects(selectedBucket, "");
+            }}
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-sm"
+          >
+            {buckets.find(b => b.id === selectedBucket)?.displayName || buckets.find(b => b.id === selectedBucket)?.name}
+          </button>
+          {getBreadcrumbs().map((part, index) => (
+            <div key={index} className="flex items-center space-x-1">
+              <svg className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+              <button
+                onClick={() => navigateToBreadcrumb(index)}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium whitespace-nowrap text-sm"
+              >
+                {part}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

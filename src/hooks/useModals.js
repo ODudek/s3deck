@@ -4,6 +4,7 @@ export const useModals = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, item: null });
   const [propertiesModal, setPropertiesModal] = useState({ isOpen: false, item: null });
+  const [createFolderModal, setCreateFolderModal] = useState(false);
 
   const openAddBucket = () => setShowAddForm(true);
   const closeAddBucket = () => setShowAddForm(false);
@@ -24,6 +25,9 @@ export const useModals = () => {
     setPropertiesModal({ isOpen: false, item: null });
   };
 
+  const openCreateFolderModal = () => setCreateFolderModal(true);
+  const closeCreateFolderModal = () => setCreateFolderModal(false);
+
   return {
     // Add bucket modal
     showAddForm,
@@ -38,6 +42,11 @@ export const useModals = () => {
     // Properties modal
     propertiesModal,
     openPropertiesModal,
-    closePropertiesModal
+    closePropertiesModal,
+
+    // Create folder modal
+    createFolderModal,
+    openCreateFolderModal,
+    closeCreateFolderModal
   };
 };

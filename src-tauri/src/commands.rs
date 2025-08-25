@@ -282,6 +282,24 @@ fn count_files_in_directory(dir: &Path) -> Result<usize> {
 }
 
 #[command]
+pub async fn get_folder_latest_modified(bucket_id: String, folder_key: String) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+    let config_manager = ConfigManager::new()?;
+    let bucket_config = config_manager.get_bucket(&bucket_id)?;
+
+    let s3_client = S3Client::new(&bucket_config).await?;
+    s3_client.get_folder_latest_modified(&folder_key).await
+}
+
+#[command]
+pub async fn create_folder(bucket_id: String, folder_path: String) -> Result<String> {
+    let config_manager = ConfigManager::new()?;
+    let bucket_config = config_manager.get_bucket(&bucket_id)?;
+
+    let s3_client = S3Client::new(&bucket_config).await?;
+    s3_client.create_folder(&folder_path).await
+}
+
+#[command]
 pub async fn rename_object(request: RenameRequest) -> Result<RenameResponse> {
     // Validate the new filename
     let new_name = if request.is_folder {

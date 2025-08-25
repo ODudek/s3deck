@@ -21,6 +21,8 @@ pub fn run() {
             list_objects,
             delete_object,
             get_object_metadata,
+            get_folder_latest_modified,
+            create_folder,
             upload_files,
             count_files,
             rename_object,
