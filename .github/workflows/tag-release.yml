@@ -20,13 +20,25 @@ concurrency:
 
 jobs:
   build-and-release:
-    name: Build and Release (${{ matrix.platform }})
+    name: Build and Release (${{ matrix.platform }} - ${{ matrix.arch }})
     runs-on: ${{ matrix.platform }}
 
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        include:
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            arch: 'aarch64'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+            arch: 'x86_64'
+          - platform: 'ubuntu-latest'
+            args: ''
+            arch: 'x86_64'
+          - platform: 'windows-latest'
+            args: ''
+            arch: 'x86_64'
 
     steps:
       - uses: actions/checkout@v5
@@ -39,6 +51,8 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -80,3 +94,25 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeDebug: false
+          args: ${{ matrix.args }}
+
+      - name: Fix macOS bundle (remove quarantine)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          # Find and fix all .app bundles
+          find src-tauri/target -name "*.app" -type d | while read app_bundle; do
+            echo "Fixing bundle: $app_bundle"
+            xattr -cr "$app_bundle" || true
+            # Verify the fix
+            if xattr -l "$app_bundle" | grep -q quarantine; then
+              echo "Warning: Quarantine attribute still present in $app_bundle"
+            else
+              echo "✅ Fixed macOS bundle: $app_bundle"
+            fi
+          done
+          
+          # Also fix any DMG files
+          find src-tauri/target -name "*.dmg" | while read dmg_file; do
+            echo "Fixing DMG: $dmg_file"
+            xattr -cr "$dmg_file" || true
+          done
