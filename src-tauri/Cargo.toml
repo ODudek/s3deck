@@ -1,6 +1,6 @@
 [package]
 name = "s3deck"
-version = "0.2.0"
+version = "0.2.1"
 description = "A S3 Deck application"
 authors = ["Aleksander Dudek"]
 edition = "2021"
