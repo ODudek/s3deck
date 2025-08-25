@@ -38,7 +38,7 @@ dirs = "5"
 
 # Error handling
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 
 # MIME type detection
 mime_guess = "2"
