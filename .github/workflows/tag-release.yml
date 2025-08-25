@@ -1,9 +1,12 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v0.2.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -62,8 +65,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "S3 Deck ${{ github.ref_name }}"
+          tagName: ${{ inputs.tag }}
+          releaseName: "S3 Deck ${{ inputs.tag }}"
           releaseBody: |
             ## 🚀 Easy Installation
 
@@ -72,7 +75,7 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
 
             # Or install specific version
-            curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v ${{ github.ref_name }}
+            curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v ${{ inputs.tag }}
             ```
 
             **This installer will:**

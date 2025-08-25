@@ -1,5 +1,6 @@
 import React from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 import { useSettings } from '../contexts/SettingsContext';
 import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
@@ -28,6 +29,43 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
+// Helper component to display folder modification date
+const FolderModifiedDate = ({ folderKey, selectedBucket }) => {
+  const [modifiedDate, setModifiedDate] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchFolderModified = async () => {
+      if (!selectedBucket || !folderKey) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const result = await invoke('get_folder_latest_modified', {
+          bucketId: selectedBucket,
+          folderKey: folderKey
+        });
+        setModifiedDate(result);
+      } catch (error) {
+        console.error('Error fetching folder modified date:', error);
+        setModifiedDate(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFolderModified();
+  }, [folderKey, selectedBucket]);
+
+  if (isLoading) {
+    return <span className="text-xs">...</span>;
+  }
+
+  return <span>{formatLastModified(modifiedDate) || "-"}</span>;
+};
+
 export default function ObjectsTable({
   objects,
   loadingObjects,
@@ -38,7 +76,8 @@ export default function ObjectsTable({
   onDrop,
   isDragOver,
   setIsDragOver,
-  refreshObjects
+  refreshObjects,
+  selectedBucket
 }) {
   const { settings } = useSettings();
 
@@ -169,7 +208,7 @@ export default function ObjectsTable({
           </div>
         )}
 
-        <div className="overflow-x-auto max-h-[90vh] overflow-y-auto">
+        <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
             <tr>
@@ -267,7 +306,10 @@ export default function ObjectsTable({
                     {item.isFolder ? "-" : formatFileSize(item.size)}
                   </td>
                   <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {item.isFolder ? "-" : formatLastModified(item.lastModified)}
+                    {item.isFolder 
+                      ? <FolderModifiedDate folderKey={item.key} selectedBucket={selectedBucket} />
+                      : formatLastModified(item.lastModified)
+                    }
                   </td>
                 </tr>
               ))

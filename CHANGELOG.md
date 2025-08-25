@@ -5,6 +5,22 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-08-25
+
+### Added
+- **New Folder Creation**: Button to create new folders with comprehensive validation
+- **Folder Modification Dates**: Display latest file modification date for folders in the Modified column
+- **Smart Error Handling**: In-modal error display for better user experience and visibility
+
+### Changed
+- **Breadcrumbs Layout**: Moved breadcrumbs under search section to prevent horizontal scrolling
+- **Header Layout**: Improved spacing and organization in header components
+
+### Fixed
+- **Double Scrollbar Issue**: Removed duplicate Y-axis scrollbars in objects view
+- **Error Visibility**: Fixed server error messages being hidden behind modal overlays
+- **Folder Validation**: Added proper validation for duplicate folder names and invalid characters
+
 ## [0.2.0] - 2024-08-25
 
 ### Added

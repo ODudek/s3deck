@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { invoke } from '@tauri-apps/api/core';
 
 // Components
 import Sidebar from "./Sidebar";
@@ -10,6 +11,7 @@ import AddBucketModal from "./AddBucketModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 import PropertiesModal from "./PropertiesModal";
 import RenameModal from "./RenameModal";
+import CreateFolderModal from "./CreateFolderModal";
 import NotificationBanner from './ui/NotificationBanner';
 import UploadProgress from './ui/UploadProgress';
 import ConfigView from './ConfigView';
@@ -29,6 +31,7 @@ export default function AppContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [renameItem, setRenameItem] = useState(null);
+  const [createFolderError, setCreateFolderError] = useState('');
 
   // Initialize theme
   useTheme();
@@ -162,41 +165,23 @@ export default function AppContent() {
 
   const handleDeleteBucket = async (bucketId) => {
     try {
-      const response = await fetch(`http://localhost:8082/bucket?id=${bucketId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        notifications.showSuccess('Bucket configuration deleted successfully');
-        s3Operations.loadBuckets();
-      } else {
-        const errorData = await response.json();
-        notifications.showError(errorData.message || 'Failed to delete bucket configuration');
-      }
+      await invoke('delete_bucket_config', { bucketId });
+      notifications.showSuccess('Bucket configuration deleted successfully');
+      s3Operations.loadBuckets();
     } catch (error) {
-      notifications.showError('Failed to delete bucket configuration');
+      console.error('Error deleting bucket:', error);
+      notifications.showError(error.message || 'Failed to delete bucket configuration');
     }
   };
 
   const handleEditBucket = async (bucketConfig) => {
     try {
-      const response = await fetch('http://localhost:8082/update-bucket', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bucketConfig),
-      });
-
-      if (response.ok) {
-        notifications.showSuccess('Bucket configuration updated successfully');
-        s3Operations.loadBuckets();
-      } else {
-        const errorData = await response.json();
-        notifications.showError(errorData.message || 'Failed to update bucket configuration');
-      }
+      await invoke('update_bucket', { bucket: bucketConfig });
+      notifications.showSuccess('Bucket configuration updated successfully');
+      s3Operations.loadBuckets();
     } catch (error) {
-      notifications.showError('Failed to update bucket configuration');
+      console.error('Error updating bucket:', error);
+      notifications.showError(error.message || 'Failed to update bucket configuration');
     }
   };
 
@@ -248,6 +233,25 @@ export default function AppContent() {
     await upload.handleDrop(eventOrPaths, source);
   };
 
+  // Create folder handlers
+  const handleCreateFolder = async (folderName) => {
+    setCreateFolderError(''); // Clear previous error
+    const result = await s3Operations.createFolder(
+      folderName,
+      navigation.currentPathRef,
+      notifications.showSuccess,
+      (error) => {}, // Don't show notification, we'll show in modal
+      loadObjectsWithNavigation
+    );
+
+    if (result.success) {
+      modals.closeCreateFolderModal();
+      setCreateFolderError('');
+    } else {
+      setCreateFolderError(result.error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-800 relative">
       <Sidebar
@@ -277,6 +281,7 @@ export default function AppContent() {
           navigateBack={handleNavigateBack}
           setShowAddForm={modals.openAddBucket}
           handleFolderUpload={upload.handleFolderUpload}
+          onCreateFolder={modals.openCreateFolderModal}
         />
 
         <NotificationBanner
@@ -319,6 +324,7 @@ export default function AppContent() {
               isDragOver={isDragOver}
               setIsDragOver={setIsDragOver}
               refreshObjects={() => loadObjectsWithNavigation(s3Operations.selectedBucket, navigation.currentPath)}
+              selectedBucket={s3Operations.selectedBucket}
             />
           )}
         </div>
@@ -360,6 +366,17 @@ export default function AppContent() {
         item={renameItem}
         onRename={handleRename}
         isRenaming={s3Operations.isRenaming}
+      />
+
+      <CreateFolderModal
+        isOpen={modals.createFolderModal}
+        onClose={() => {
+          setCreateFolderError('');
+          modals.closeCreateFolderModal();
+        }}
+        onCreateFolder={handleCreateFolder}
+        isCreating={s3Operations.isCreatingFolder}
+        serverError={createFolderError}
       />
 
       {/* Notifications - positioned at bottom right */}
