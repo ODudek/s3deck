@@ -1,8 +1,28 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* Custom dark mode variant for Tailwind v4 */
+/* Custom variants for Tailwind v4 */
 @variant dark (&:where(.dark, .dark *));
+@variant hover (&:hover);
+@variant focus (&:focus);
+@variant active (&:active);
+
+/* Fix cursor pointer for buttons and interactive elements in Tailwind v4 */
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+[role="button"] {
+    cursor: pointer;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
 
 /* Custom Range Slider Styles */
 .slider {

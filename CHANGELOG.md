@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename option in context menu for all objects
 - Simplified notification messages showing only file/folder names instead of full paths
 - Warning notification type with appropriate styling and icon
+- Smart context menu positioning that automatically adjusts to viewport boundaries
+- Intelligent menu placement (shows above when too close to bottom, left when too close to right)
+- Global cursor pointer styles for all interactive elements
+- Context menu margin safety zones to prevent edge clipping
 
 ### Changed
 - Migrated from Go backend to pure Rust/Tauri implementation
@@ -48,6 +52,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dark mode theme switching with custom variant configuration
 - Modal and sidebar overlay transparency issues
 - CSS build process with Tailwind v4
+- Button cursor pointer missing after Tailwind CSS v4 migration
+- Context menu overflow issues when right-clicking near viewport edges
+- Interactive elements not showing proper cursor on hover
+- Context menu accessibility in constrained viewport areas
 
 ### Security
 - Removed network-based communication in favor of secure IPC

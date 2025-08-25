@@ -65,15 +65,15 @@ impl S3Client {
         for prefix in response.common_prefixes() {
             if let Some(prefix_str) = prefix.prefix() {
                 let name = prefix_str.trim_end_matches('/');
-                let name = if let Some(pos) = name.rfind('/') {
+                let display_name = if let Some(pos) = name.rfind('/') {
                     &name[pos + 1..]
                 } else {
                     name
                 };
 
                 items.push(FileItem {
-                    key: prefix_str.to_string(),
-                    name: name.to_string(),
+                    key: prefix_str.to_string(),    // Keep original encoded key
+                    name: display_name.to_string(), // Show actual name as stored
                     size: 0,
                     is_folder: true,
                     last_modified: None,
@@ -100,8 +100,8 @@ impl S3Client {
                 });
 
                 items.push(FileItem {
-                    key: key.to_string(),
-                    name: name.to_string(),
+                    key: key.to_string(),   // Keep original encoded key
+                    name: name.to_string(), // Show actual name as stored
                     size: object.size().unwrap_or(0),
                     is_folder: false,
                     last_modified,
@@ -264,15 +264,25 @@ impl S3Client {
 
     async fn rename_file(&self, old_key: &str, new_key: &str) -> Result<RenameResponse> {
         // Check if source file exists
-        let _metadata = self.get_object_metadata(old_key).await?;
+        let _metadata = self
+            .get_object_metadata(old_key)
+            .await
+            .map_err(|e| S3DeckError::S3(format!("Source file '{}' not found: {}", old_key, e)))?;
+
+        // Check if destination file already exists
+        if let Ok(_) = self.get_object_metadata(new_key).await {
+            return Err(S3DeckError::S3(format!(
+                "Destination file '{}' already exists",
+                new_key
+            )));
+        }
 
         // Get the new content type based on the new file extension
         let content_type = get_content_type_from_extension(new_key);
 
-        // Copy object to new location with new content type
         let copy_source = format!("{}/{}", self.bucket_name, old_key);
 
-        let mut copy_request = self
+        let copy_request = self
             .client
             .copy_object()
             .bucket(&self.bucket_name)
@@ -280,19 +290,17 @@ impl S3Client {
             .copy_source(&copy_source)
             .content_type(&content_type);
 
-        // Copy metadata from original object
-        copy_request =
-            copy_request.metadata_directive(aws_sdk_s3::types::MetadataDirective::Replace);
-
-        copy_request
-            .send()
-            .await
-            .map_err(|e| S3DeckError::S3(format!("Failed to copy object: {}", e)))?;
+        copy_request.send().await.map_err(|e| {
+            S3DeckError::S3(format!(
+                "Failed to copy object from '{}' to '{}': {}. Copy source: '{}'",
+                old_key, new_key, e, copy_source
+            ))
+        })?;
 
         // Delete original object
         self.delete_object(old_key).await?;
 
-        // Extract just the filename from the path
+        // Extract just the filename for display
         let old_filename = old_key.split('/').last().unwrap_or(old_key);
         let new_filename = new_key.split('/').last().unwrap_or(new_key);
 
@@ -306,21 +314,8 @@ impl S3Client {
     }
 
     async fn rename_folder(&self, old_prefix: &str, new_prefix: &str) -> Result<RenameResponse> {
-        // Ensure prefixes end with '/'
-        let old_prefix = if old_prefix.ends_with('/') {
-            old_prefix.to_string()
-        } else {
-            format!("{}/", old_prefix)
-        };
-
-        let new_prefix = if new_prefix.ends_with('/') {
-            new_prefix.to_string()
-        } else {
-            format!("{}/", new_prefix)
-        };
-
         // List all objects under the old prefix
-        let objects = self.list_all_objects_with_prefix(&old_prefix).await?;
+        let objects = self.list_all_objects_with_prefix(old_prefix).await?;
 
         if objects.is_empty() {
             return Err(S3DeckError::S3("Folder not found or is empty".to_string()));
@@ -332,7 +327,7 @@ impl S3Client {
         // Move each object
         for object_key in &objects {
             // Calculate new key by replacing the prefix
-            let relative_path = object_key.strip_prefix(&old_prefix).unwrap_or(object_key);
+            let relative_path = object_key.strip_prefix(old_prefix).unwrap_or(object_key);
             let new_object_key = format!("{}{}", new_prefix, relative_path);
 
             // Get content type for the new key
@@ -348,7 +343,6 @@ impl S3Client {
                 .key(&new_object_key)
                 .copy_source(&copy_source)
                 .content_type(&content_type)
-                .metadata_directive(aws_sdk_s3::types::MetadataDirective::Replace)
                 .send()
                 .await;
 
@@ -373,36 +367,23 @@ impl S3Client {
         }
 
         let total_moved = moved_files.len() as i32;
-        let message = if failed_files.is_empty() {
-            // Extract just the folder name from the path
-            let old_folder_name = old_prefix
-                .trim_end_matches('/')
-                .split('/')
-                .last()
-                .unwrap_or(old_prefix.trim_end_matches('/'));
-            let new_folder_name = new_prefix
-                .trim_end_matches('/')
-                .split('/')
-                .last()
-                .unwrap_or(new_prefix.trim_end_matches('/'));
+        let old_folder_name = old_prefix
+            .trim_end_matches('/')
+            .split('/')
+            .last()
+            .unwrap_or(old_prefix);
+        let new_folder_name = new_prefix
+            .trim_end_matches('/')
+            .split('/')
+            .last()
+            .unwrap_or(new_prefix);
 
+        let message = if failed_files.is_empty() {
             format!(
                 "Folder renamed from '{}' to '{}'. Moved {} files.",
                 old_folder_name, new_folder_name, total_moved
             )
         } else {
-            // Extract just the folder name from the path
-            let old_folder_name = old_prefix
-                .trim_end_matches('/')
-                .split('/')
-                .last()
-                .unwrap_or(old_prefix.trim_end_matches('/'));
-            let new_folder_name = new_prefix
-                .trim_end_matches('/')
-                .split('/')
-                .last()
-                .unwrap_or(new_prefix.trim_end_matches('/'));
-
             format!(
                 "Folder partially renamed from '{}' to '{}'. Moved {} files, {} failed.",
                 old_folder_name,
@@ -414,8 +395,8 @@ impl S3Client {
 
         Ok(RenameResponse {
             message,
-            old_key: old_prefix.trim_end_matches('/').to_string(),
-            new_key: new_prefix.trim_end_matches('/').to_string(),
+            old_key: old_prefix.to_string(),
+            new_key: new_prefix.to_string(),
             moved_files: Some(moved_files),
             total_moved: Some(total_moved),
         })

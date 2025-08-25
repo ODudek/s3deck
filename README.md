@@ -18,9 +18,11 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 - **File Properties**: View detailed metadata and object information
 - **Folder Operations**: Create, navigate, and manage folders
 - **Search & Filter**: Find files quickly with built-in search
-- **Context Menus**: Right-click actions for files and folders
+- **Smart Context Menus**: Right-click actions with intelligent positioning
+- **File & Folder Rename**: Rename files and folders with smart content-type detection
 - **Settings Management**: Customizable app preferences
 - **Upload Progress**: Real-time upload status and error reporting
+- **Modern UI**: Built with Tailwind CSS v4 for enhanced performance and styling
 
 ## 🚀 Quick Start
 
@@ -116,11 +118,12 @@ This will create platform-specific installers in `src-tauri/target/release/bundl
 
 S3 Deck uses a modern desktop application architecture:
 
-- **Frontend**: React + Vite + Tailwind CSS
+- **Frontend**: React + Vite + Tailwind CSS v4
 - **Backend**: Rust with AWS S3 SDK
 - **Desktop Shell**: Tauri (Rust-based)
 - **Communication**: Direct Tauri IPC
 - **Configuration**: JSON-based local storage
+- **UI Framework**: Modern responsive design with smart component positioning
 
 ```
 ┌─────────────────┐    ┌──────────────────────────────┐
@@ -204,6 +207,7 @@ The Rust backend provides the following Tauri commands for the frontend:
 | `upload_files` | Upload files to bucket |
 | `delete_object` | Delete object or folder |
 | `get_object_metadata` | Get object metadata |
+| `rename_object` | Rename files and folders |
 | `count_files` | Count files for upload progress |
 
 ## 🎨 Themes

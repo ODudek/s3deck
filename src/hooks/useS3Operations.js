@@ -1,6 +1,37 @@
 import { useState, useRef, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 
+// Utility function to extract error message from Tauri error objects
+const extractErrorMessage = (error) => {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error?.message) {
+    return error.message;
+  }
+
+  // Handle Tauri error objects like { "S3": "Failed to copy object: service error" }
+  if (typeof error === 'object' && error !== null) {
+    // Try to find the error message in common error object structures
+    const errorKeys = ['S3', 'Config', 'Io', 'Serialization', 'BucketNotFound', 'InvalidPath'];
+    for (const key of errorKeys) {
+      if (error[key]) {
+        return error[key];
+      }
+    }
+
+    // Fallback to JSON representation
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return error.toString();
+    }
+  }
+
+  return 'Unknown error';
+};
+
 export const useS3Operations = () => {
   const [buckets, setBuckets] = useState([]);
   const [objects, setObjects] = useState([]);
@@ -32,7 +63,10 @@ export const useS3Operations = () => {
   useEffect(() => {
     invoke('get_buckets')
       .then(setBuckets)
-      .catch(error => console.error('Error loading buckets:', error));
+      .catch(error => {
+        const errorMessage = extractErrorMessage(error);
+        console.error('Error loading buckets:', errorMessage);
+      });
   }, []);
 
   const loadObjects = async (bucketId, prefix = "") => {
@@ -46,7 +80,8 @@ export const useS3Operations = () => {
       });
       setObjects(data);
     } catch (error) {
-      console.error('Error loading objects:', error);
+      const errorMessage = extractErrorMessage(error);
+      console.error('Error loading objects:', errorMessage);
       setObjects([]);
     } finally {
       setLoadingObjects(false);
@@ -87,7 +122,8 @@ export const useS3Operations = () => {
       onSuccess("Bucket configuration added successfully!");
       return true;
     } catch (error) {
-      onError(`Error: ${error}`);
+      const errorMessage = extractErrorMessage(error);
+      onError(`Error: ${errorMessage}`);
       return false;
     } finally {
       setIsAdding(false);
@@ -117,7 +153,8 @@ export const useS3Operations = () => {
       }
       return true;
     } catch (error) {
-      onError(`Delete failed: ${error}`);
+      const errorMessage = extractErrorMessage(error);
+      onError(`Delete failed: ${errorMessage}`);
       return false;
     } finally {
       setIsDeleting(false);
@@ -140,7 +177,8 @@ export const useS3Operations = () => {
       });
       setMetadata(data);
     } catch (error) {
-      setMetadataError(error.toString());
+      const errorMessage = extractErrorMessage(error);
+      setMetadataError(errorMessage);
     } finally {
       setIsLoadingMetadata(false);
     }
@@ -156,30 +194,35 @@ export const useS3Operations = () => {
 
     setIsRenaming(true);
     const renameBucket = selectedBucketRef.current;
-    const currentPath = item.key;
+    // Keep original encoded key for S3 operations
+    const originalKey = item.key;
+
+    // Get current directory from navigation context
+    const currentDirectory = currentPathRef?.current || '';
 
     try {
-      // Calculate new key based on the item type
+      // Calculate new key based on current directory and item type
       let newKey;
-      if (item.isFolder) {
-        // For folders, replace the folder name
-        const pathParts = currentPath.split('/').filter(part => part);
-        pathParts[pathParts.length - 1] = newName;
-        newKey = pathParts.join('/');
+
+      // Simple logic: place the renamed item in the current directory
+      if (currentDirectory) {
+        newKey = currentDirectory.endsWith('/')
+          ? currentDirectory + newName
+          : currentDirectory + '/' + newName;
       } else {
-        // For files, replace the filename (keeping the directory path)
-        const lastSlashIndex = currentPath.lastIndexOf('/');
-        if (lastSlashIndex === -1) {
-          newKey = newName;
-        } else {
-          newKey = currentPath.substring(0, lastSlashIndex + 1) + newName;
-        }
+        // We're in root directory
+        newKey = newName;
+      }
+
+      // For folders, ensure the key ends with '/' if it's going to be a folder
+      if (item.isFolder && !newKey.endsWith('/')) {
+        newKey = newKey + '/';
       }
 
       const result = await invoke('rename_object', {
         request: {
           bucket_id: renameBucket,
-          old_key: currentPath,
+          old_key: originalKey,
           new_key: newKey,
           is_folder: item.isFolder
         }
@@ -200,7 +243,8 @@ export const useS3Operations = () => {
       }
       return true;
     } catch (error) {
-      onError(`Rename failed: ${error}`);
+      const errorMessage = extractErrorMessage(error);
+      onError(`Rename failed: ${errorMessage}`);
       return false;
     } finally {
       setIsRenaming(false);
