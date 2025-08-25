@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 
 export const useS3Operations = () => {
   const [buckets, setBuckets] = useState([]);
@@ -18,6 +19,7 @@ export const useS3Operations = () => {
   const [metadata, setMetadata] = useState(null);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [metadataError, setMetadataError] = useState(null);
+  const [isRenaming, setIsRenaming] = useState(false);
 
   const selectedBucketRef = useRef(null);
 
@@ -28,8 +30,7 @@ export const useS3Operations = () => {
 
   // Load buckets on mount
   useEffect(() => {
-    fetch("http://localhost:8082/buckets")
-      .then(res => res.json())
+    invoke('get_buckets')
       .then(setBuckets)
       .catch(error => console.error('Error loading buckets:', error));
   }, []);
@@ -39,9 +40,10 @@ export const useS3Operations = () => {
     setLoadingObjects(true);
 
     try {
-      const url = `http://localhost:8082/objects?bucket=${bucketId}${prefix ? `&prefix=${encodeURIComponent(prefix)}` : ''}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const data = await invoke('list_objects', {
+        bucketId,
+        prefix: prefix || null
+      });
       setObjects(data);
     } catch (error) {
       console.error('Error loading objects:', error);
@@ -60,38 +62,32 @@ export const useS3Operations = () => {
     setIsAdding(true);
 
     try {
-      const response = await fetch("http://localhost:8082/add-bucket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bucketConfig),
+      const updatedBuckets = await invoke('add_bucket', {
+        bucket: {
+          id: "", // will be generated
+          name: bucketConfig.name,
+          displayName: bucketConfig.displayName,
+          region: bucketConfig.region,
+          accessKey: bucketConfig.accessKey,
+          secretKey: bucketConfig.secretKey,
+          endpoint: bucketConfig.endpoint || null
+        }
       });
 
-      if (response.ok) {
-        setBucketConfig({
-          name: "",
-          displayName: "",
-          region: "",
-          accessKey: "",
-          secretKey: "",
-          endpoint: ""
-        });
+      setBucketConfig({
+        name: "",
+        displayName: "",
+        region: "",
+        accessKey: "",
+        secretKey: "",
+        endpoint: ""
+      });
 
-        // Refresh buckets list
-        const bucketsResponse = await fetch("http://localhost:8082/buckets");
-        const updatedBuckets = await bucketsResponse.json();
-        setBuckets(updatedBuckets);
-
-        onSuccess("Bucket configuration added successfully!");
-        return true;
-      } else {
-        const error = await response.text();
-        onError(`Error: ${error}`);
-        return false;
-      }
+      setBuckets(updatedBuckets);
+      onSuccess("Bucket configuration added successfully!");
+      return true;
     } catch (error) {
-      onError(`Error: ${error.message}`);
+      onError(`Error: ${error}`);
       return false;
     } finally {
       setIsAdding(false);
@@ -106,29 +102,22 @@ export const useS3Operations = () => {
     const deleteCurrentPath = currentPathRef.current;
 
     try {
-      const url = `http://localhost:8082/delete?bucket=${deleteBucket}&key=${encodeURIComponent(item.key)}`;
-      const response = await fetch(url, {
-        method: 'DELETE'
+      const result = await invoke('delete_object', {
+        bucketId: deleteBucket,
+        key: item.key
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        onSuccess(result.message);
+      onSuccess(result.message);
 
-        // Refresh the objects list using callback or fallback to internal method
-        if (refreshCallback) {
-          refreshCallback(deleteBucket, deleteCurrentPath);
-        } else {
-          loadObjects(deleteBucket, deleteCurrentPath);
-        }
-        return true;
+      // Refresh the objects list using callback or fallback to internal method
+      if (refreshCallback) {
+        refreshCallback(deleteBucket, deleteCurrentPath);
       } else {
-        const error = await response.text();
-        onError(`Delete failed: ${error}`);
-        return false;
+        loadObjects(deleteBucket, deleteCurrentPath);
       }
+      return true;
     } catch (error) {
-      onError(`Delete failed: ${error.message}`);
+      onError(`Delete failed: ${error}`);
       return false;
     } finally {
       setIsDeleting(false);
@@ -145,18 +134,13 @@ export const useS3Operations = () => {
     const metadataBucket = selectedBucketRef.current;
 
     try {
-      const url = `http://localhost:8082/metadata?bucket=${metadataBucket}&key=${encodeURIComponent(item.key)}`;
-      const response = await fetch(url);
-
-      if (response.ok) {
-        const data = await response.json();
-        setMetadata(data);
-      } else {
-        const error = await response.text();
-        setMetadataError(error);
-      }
+      const data = await invoke('get_object_metadata', {
+        bucketId: metadataBucket,
+        key: item.key
+      });
+      setMetadata(data);
     } catch (error) {
-      setMetadataError(error.message);
+      setMetadataError(error.toString());
     } finally {
       setIsLoadingMetadata(false);
     }
@@ -165,6 +149,62 @@ export const useS3Operations = () => {
   const clearMetadata = () => {
     setMetadata(null);
     setMetadataError(null);
+  };
+
+  const renameObject = async (item, newName, onSuccess, onError, refreshCallback, currentPathRef) => {
+    if (!item || !newName) return false;
+
+    setIsRenaming(true);
+    const renameBucket = selectedBucketRef.current;
+    const currentPath = item.key;
+
+    try {
+      // Calculate new key based on the item type
+      let newKey;
+      if (item.isFolder) {
+        // For folders, replace the folder name
+        const pathParts = currentPath.split('/').filter(part => part);
+        pathParts[pathParts.length - 1] = newName;
+        newKey = pathParts.join('/');
+      } else {
+        // For files, replace the filename (keeping the directory path)
+        const lastSlashIndex = currentPath.lastIndexOf('/');
+        if (lastSlashIndex === -1) {
+          newKey = newName;
+        } else {
+          newKey = currentPath.substring(0, lastSlashIndex + 1) + newName;
+        }
+      }
+
+      const result = await invoke('rename_object', {
+        request: {
+          bucket_id: renameBucket,
+          old_key: currentPath,
+          new_key: newKey,
+          is_folder: item.isFolder
+        }
+      });
+
+      onSuccess(result.message);
+
+      // Refresh the objects list while staying in the current directory
+      // We need to pass the current path, not calculate from the renamed item
+      if (refreshCallback && currentPathRef) {
+        // refreshCallback is loadObjectsWithNavigation(bucketId, prefix)
+        // We want to stay in the same directory where we currently are
+        refreshCallback(renameBucket, currentPathRef.current);
+      } else {
+        // Fallback: calculate current directory from the old key
+        const currentDir = currentPath.includes('/') ? currentPath.substring(0, currentPath.lastIndexOf('/')) : '';
+        loadObjects(renameBucket, currentDir);
+      }
+      return true;
+    } catch (error) {
+      onError(`Rename failed: ${error}`);
+      return false;
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   return {
@@ -176,6 +216,7 @@ export const useS3Operations = () => {
     bucketConfig,
     isAdding,
     isDeleting,
+    isRenaming,
     metadata,
     isLoadingMetadata,
     metadataError,
@@ -185,6 +226,7 @@ export const useS3Operations = () => {
     loadObjects,
     addBucketConfig,
     deleteObject,
+    renameObject,
     loadMetadata,
     clearMetadata,
     setSelectedBucket,

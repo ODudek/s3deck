@@ -1,6 +1,6 @@
 # S3 Deck
 
-A modern, cross-platform desktop application for managing S3-compatible object storage. Built with Tauri, React, and Go, S3 Deck provides an intuitive file manager interface for browsing, uploading, and managing files in your S3 buckets.
+A modern, cross-platform desktop application for managing S3-compatible object storage. Built with Tauri and React, S3 Deck provides an intuitive file manager interface for browsing, uploading, and managing files in your S3 buckets.
 
 ![S3 Deck Screenshot](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -28,7 +28,6 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 
 - **Node.js** 18+ and npm
 - **Rust** (for building Tauri apps)
-- **Go** 1.19+ (for the backend)
 
 ### Installation
 
@@ -41,9 +40,6 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 2. Install dependencies:
    ```bash
    npm install
-   cd src-tauri/go-backend
-   go mod tidy
-   cd ../..
    ```
 
 3. Start the development environment:
@@ -64,18 +60,19 @@ This will create platform-specific installers in `src-tauri/target/release/bundl
 
 ## 🏗️ Architecture
 
-S3 Deck uses a multi-layer architecture:
+S3 Deck uses a modern desktop application architecture:
 
 - **Frontend**: React + Vite + Tailwind CSS
+- **Backend**: Rust with AWS S3 SDK
 - **Desktop Shell**: Tauri (Rust-based)
-- **Backend API**: Go HTTP server
+- **Communication**: Direct Tauri IPC
 - **Configuration**: JSON-based local storage
 
 ```
-┌─────────────────┐    ┌──────────────┐    ┌─────────────────┐
-│   React UI      │───▶│ Tauri Shell  │───▶│  Go Backend     │
-│  (Frontend)     │    │  (Desktop)   │    │ (S3 Operations) │
-└─────────────────┘    └──────────────┘    └─────────────────┘
+┌─────────────────┐    ┌──────────────────────────────┐
+│   React UI      │───▶│      Tauri + Rust           │
+│  (Frontend)     │    │  (Desktop + S3 Operations)  │
+└─────────────────┘    └──────────────────────────────┘
 ```
 
 ## 🛠️ Development
@@ -83,9 +80,8 @@ S3 Deck uses a multi-layer architecture:
 ### Available Scripts
 
 - `npm run dev` - Start Vite development server
-- `npm run tauri dev` - Start Tauri in development mode
-- `npm run dev:backend` - Start Go backend with hot reload
-- `npm run dev:all` - Start all development servers
+- `npm run dev:tauri` - Start Tauri in development mode (includes Vite)
+- `npm start` - Start development environment
 - `npm run build` - Build frontend for production
 - `npm run tauri build` - Build desktop application
 
@@ -98,12 +94,15 @@ s3deck/
 │   ├── contexts/          # React contexts
 │   ├── hooks/             # Custom React hooks
 │   └── ...
-├── src-tauri/             # Tauri configuration
-│   ├── go-backend/        # Go HTTP server
-│   │   ├── main.go        # Server entry point
-│   │   ├── handlers.go    # HTTP handlers
-│   │   ├── s3client.go    # S3 operations
-│   │   └── ...
+├── src-tauri/             # Tauri application
+│   ├── src/               # Rust backend
+│   │   ├── main.rs        # Entry point
+│   │   ├── lib.rs         # Library entry point
+│   │   ├── commands.rs    # Tauri commands
+│   │   ├── s3_client.rs   # S3 operations
+│   │   ├── config.rs      # Configuration management
+│   │   └── models.rs      # Data models
+│   ├── Cargo.toml         # Rust dependencies
 │   └── tauri.conf.json    # Tauri configuration
 └── ...
 ```
@@ -137,18 +136,21 @@ S3 Deck stores bucket configurations in `~/.s3deck/config.json`:
 - **Wasabi**
 - Any S3-compatible service
 
-## 🔧 Backend API
+## 🔧 Tauri Commands
 
-The Go backend exposes a REST API on `localhost:8082`:
+The Rust backend provides the following Tauri commands for the frontend:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/buckets` | List configured buckets |
-| POST | `/add-bucket` | Add bucket configuration |
-| GET | `/objects?bucket=ID&prefix=PATH` | List objects in bucket |
-| POST | `/upload` | Upload file to bucket |
-| DELETE | `/delete?bucket=ID&key=KEY` | Delete object or folder |
-| GET | `/metadata?bucket=ID&key=KEY` | Get object metadata |
+| Command | Description |
+|---------|-------------|
+| `get_buckets` | List configured buckets |
+| `add_bucket` | Add bucket configuration |
+| `update_bucket` | Update bucket configuration |
+| `delete_bucket_config` | Delete bucket configuration |
+| `list_objects` | List objects in bucket |
+| `upload_files` | Upload files to bucket |
+| `delete_object` | Delete object or folder |
+| `get_object_metadata` | Get object metadata |
+| `count_files` | Count files for upload progress |
 
 ## 🎨 Themes
 
@@ -179,7 +181,7 @@ Please use [GitHub Issues](https://github.com/adudek4/s3deck/issues) to report b
 
 - Built with [Tauri](https://tauri.app/)
 - UI powered by [React](https://react.dev/) and [Tailwind CSS](https://tailwindcss.com/)
-- Backend powered by [Go](https://golang.org/) and [AWS SDK](https://aws.amazon.com/sdk-for-go/)
+- Backend powered by [Rust](https://www.rust-lang.org/) and [AWS SDK for Rust](https://awslabs.github.io/aws-sdk-rust/)
 
 ## ⭐ Support
 

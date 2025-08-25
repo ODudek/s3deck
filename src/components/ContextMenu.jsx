@@ -2,7 +2,7 @@ export default function ContextMenu({ contextMenu, handleContextAction }) {
   if (!contextMenu) return null;
 
   return (
-    <div 
+    <div
       className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50 min-w-[120px]"
       style={{ left: contextMenu.x, top: contextMenu.y }}
       onClick={(e) => e.stopPropagation()}
@@ -63,6 +63,15 @@ export default function ContextMenu({ contextMenu, handleContextAction }) {
               <span>Download</span>
             </button>
           )}
+          <button
+            onClick={() => handleContextAction('rename', contextMenu.item)}
+            className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+            </svg>
+            <span>Rename</span>
+          </button>
           <button
             onClick={() => handleContextAction('properties', contextMenu.item)}
             className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"

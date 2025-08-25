@@ -28,8 +28,7 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 ### Prerequisites
 
 - **Node.js** 18+ and npm
-- **Rust** (for building Tauri apps)
-- **Go** 1.19+ (for the backend)
+- **Rust** (for building Tauri apps and backend)
 
 ### Getting Started
 
@@ -42,9 +41,6 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 2. Install dependencies:
    ```bash
    npm install
-   cd src-tauri/go-backend
-   go mod tidy
-   cd ../..
    ```
 
 3. Start the development environment:
@@ -57,13 +53,13 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 ### Code Style
 
 - **Frontend**: Follow React best practices and use ESLint
-- **Backend**: Follow Go conventions and use `gofmt`
+- **Backend**: Follow Rust conventions and use `cargo fmt`
 - **Commits**: Use descriptive commit messages
 
 ### Testing
 
 - Frontend tests: `npm test`
-- Backend tests: `cd src-tauri/go-backend && go test ./...`
+- Backend tests: `cd src-tauri && cargo test`
 - E2E tests: Manual testing with `npm run tauri dev`
 
 ## Bug Reports
@@ -98,12 +94,15 @@ s3deck/
 │   ├── contexts/          # React contexts
 │   ├── hooks/             # Custom React hooks
 │   └── ...
-├── src-tauri/             # Tauri configuration
-│   ├── go-backend/        # Go HTTP server
-│   │   ├── main.go        # Server entry point
-│   │   ├── handlers.go    # HTTP handlers
-│   │   ├── s3client.go    # S3 operations
-│   │   └── ...
+├── src-tauri/             # Tauri application
+│   ├── src/               # Rust backend
+│   │   ├── main.rs        # Entry point
+│   │   ├── lib.rs         # Library entry point
+│   │   ├── commands.rs    # Tauri commands
+│   │   ├── s3_client.rs   # S3 operations
+│   │   ├── config.rs      # Configuration management
+│   │   └── models.rs      # Data models
+│   ├── Cargo.toml         # Rust dependencies
 │   └── tauri.conf.json    # Tauri configuration
 ├── .github/workflows/     # GitHub Actions
 └── ...
