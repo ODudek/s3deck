@@ -4,7 +4,7 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 
 ![S3 Deck Screenshot](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Build Status](https://img.shields.io/github/workflow/status/odudek/s3deck/ci.yml?branch=main)
+[![CI](https://github.com/ODudek/s3deck/actions/workflows/ci.yml/badge.svg)](https://github.com/ODudek/s3deck/actions/workflows/ci.yml)
 
 ## ✨ Features
 
