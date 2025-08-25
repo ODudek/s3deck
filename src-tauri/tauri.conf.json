@@ -32,6 +32,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": []
+    "resources": [],
+    "macOS": {
+      "signingIdentity": null,
+      "entitlements": null
+    }
   }
 }

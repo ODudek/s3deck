@@ -9,7 +9,10 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "dev:tauri": "tauri dev",
+    "tauri:build": "tauri build",
+    "tauri:build-unsigned": "tauri build --config '{\"bundle\":{\"macOS\":{\"signingIdentity\":null}}}'",
     "start": "npm run dev:tauri",
+    "fix-macos": "./scripts/fix-macos-bundle.sh",
     "release-notes": "node scripts/generate-release-notes.cjs",
     "release-notes:version": "node scripts/generate-release-notes.cjs --version"
   },
