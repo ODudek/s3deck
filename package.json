@@ -15,12 +15,21 @@
     "version:show": "node scripts/version-manager.cjs current",
     "version:patch": "node scripts/version-manager.cjs patch",
     "version:minor": "node scripts/version-manager.cjs minor",
-    "version:major": "node scripts/version-manager.cjs major"
+    "version:major": "node scripts/version-manager.cjs major",
+    "pr:summary": "node scripts/generate-pr-summary.cjs generate",
+    "ci:version-check": "node scripts/ci-version-check.cjs summary",
+    "ci:test-frontend": "node scripts/ci-test-runner.cjs frontend",
+    "ci:test-backend": "node scripts/ci-test-runner.cjs backend",
+    "ci:test-build": "node scripts/ci-test-runner.cjs build",
+    "ci:test-all": "node scripts/ci-test-runner.cjs all",
+    "ci:pr-changelog": "node scripts/ci-pr-handler.cjs changelog",
+    "ci:pr-workflow": "node scripts/ci-pr-handler.cjs workflow"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.12",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-opener": "^2",
+    "js-yaml": "^4.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

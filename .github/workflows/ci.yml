@@ -39,84 +39,7 @@ jobs:
 
       - name: Check version consistency
         id: get_version
-        run: |
-          # Run version consistency check and capture output
-          echo "## 🔍 Version Consistency Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Run the check and capture both success/failure
-          if npm run check-version; then
-            echo "✅ **All versions are consistent!**" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Version consistency check failed!**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Please fix version mismatches before proceeding." >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
-
-          # Get current version and check if tag should be created
-          VERSION=$(npm run gh:current-version --silent)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-          # Add version info to summary
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Version |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 package.json | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🦀 tauri.conf.json | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 Cargo.toml | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📝 CHANGELOG.md | \`$VERSION\` |" >> $GITHUB_STEP_SUMMARY
-
-          # Check if we should create a tag using Node.js script
-          TAG_CHECK=$(node scripts/github-utils.cjs check-tag)
-          SHOULD_TAG=$(echo "$TAG_CHECK" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.shouldCreate)")
-
-          # Add branch and tag info to summary
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🌊 Git Flow Information" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          CURRENT_BRANCH=$(echo "${{ github.ref }}" | sed 's|refs/heads/||')
-          echo "**Current Branch:** \`$CURRENT_BRANCH\`" >> $GITHUB_STEP_SUMMARY
-
-          # Override should_tag based on Git Flow rules
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            # Main branch: always create release tags
-            echo "should_tag=$SHOULD_TAG" >> $GITHUB_OUTPUT
-            echo "branch_type=production" >> $GITHUB_OUTPUT
-            echo "**Branch Type:** 🚀 Production" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            # Develop branch: create pre-release tags
-            echo "should_tag=$SHOULD_TAG" >> $GITHUB_OUTPUT
-            echo "branch_type=prerelease" >> $GITHUB_STEP_SUMMARY
-            echo "**Branch Type:** 🧪 Pre-release" >> $GITHUB_STEP_SUMMARY
-          else
-            # Feature/other branches: no tags
-            echo "should_tag=false" >> $GITHUB_OUTPUT
-            echo "branch_type=feature" >> $GITHUB_OUTPUT
-            echo "**Branch Type:** 🔧 Feature" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🏷️ Tagging Decision" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ "$SHOULD_TAG" = "true" ]; then
-            BRANCH_TYPE=$(echo "${{ github.ref }}" | sed 's|refs/heads/||')
-            if [ "$BRANCH_TYPE" = "main" ]; then
-              echo "✅ **Will create production tag:** \`v$VERSION\`" >> $GITHUB_STEP_SUMMARY
-              echo "📦 Will create production tag: v$VERSION"
-            elif [ "$BRANCH_TYPE" = "develop" ]; then
-              echo "✅ **Will create pre-release tag:** \`v$VERSION-beta\`" >> $GITHUB_STEP_SUMMARY
-              echo "📦 Will create pre-release tag: v$VERSION-beta"
-            fi
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "This will trigger the release workflow automatically." >> $GITHUB_STEP_SUMMARY
-          else
-            REASON=$(echo "$TAG_CHECK" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.reason || 'unknown')")
-            echo "ℹ️ **Will not create tag**" >> $GITHUB_STEP_SUMMARY
-            echo "**Reason:** \`$REASON\`" >> $GITHUB_STEP_SUMMARY
-            echo "🏷️ Will not create tag. Reason: $REASON"
-          fi
+        run: npm run ci:version-check
 
   test-frontend:
     name: Test Frontend
@@ -142,18 +65,7 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: |
-          echo "## 🧪 Frontend Tests" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if npm test || echo "No tests found"; then
-            echo "✅ **Frontend tests passed**" >> $GITHUB_STEP_SUMMARY
-            echo "FRONTEND_TEST_STATUS=✅ Passed" >> $GITHUB_ENV
-          else
-            echo "❌ **Frontend tests failed**" >> $GITHUB_STEP_SUMMARY
-            echo "FRONTEND_TEST_STATUS=❌ Failed" >> $GITHUB_ENV
-            exit 1
-          fi
+        run: npm run ci:test-frontend
 
   test-backend:
     name: Test Rust Backend
@@ -181,19 +93,7 @@ jobs:
         run: cargo check
 
       - name: Run Rust tests
-        working-directory: src-tauri
-        run: |
-          echo "## 🦀 Rust Backend Tests" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if cargo test; then
-            echo "✅ **Rust backend tests passed**" >> $GITHUB_STEP_SUMMARY
-            echo "BACKEND_TEST_STATUS=✅ Passed" >> $GITHUB_ENV
-          else
-            echo "❌ **Rust backend tests failed**" >> $GITHUB_STEP_SUMMARY
-            echo "BACKEND_TEST_STATUS=❌ Failed" >> $GITHUB_ENV
-            exit 1
-          fi
+        run: npm run ci:test-backend
 
   build-tauri:
     name: Build Tauri App
@@ -235,18 +135,7 @@ jobs:
         run: npm run build
 
       - name: Build Tauri app (test build only)
-        run: |
-          echo "## 🏗️ Build Test - ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if npm run tauri build; then
-            echo "✅ **Build successful on ${{ matrix.platform }}**" >> $GITHUB_STEP_SUMMARY
-            echo "BUILD_TEST_STATUS=✅ Passed" >> $GITHUB_ENV
-          else
-            echo "❌ **Build failed on ${{ matrix.platform }}**" >> $GITHUB_STEP_SUMMARY
-            echo "BUILD_TEST_STATUS=❌ Failed" >> $GITHUB_ENV
-            exit 1
-          fi
+        run: npm run ci:test-build ${{ matrix.platform }}
 
   create-tag:
     name: Create Tag
@@ -473,106 +362,19 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
-        run: |
-          echo "## 📋 CHANGELOG Check" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          VERSION_STATUS: ${{ needs.version-consistency.result }}
+          FRONTEND_STATUS: ${{ needs.test-frontend.result }}
+          BACKEND_STATUS: ${{ needs.test-backend.result }}
+          BUILD_STATUS: ${{ needs.build-tauri.result }}
+          VERSION: ${{ needs.version-consistency.outputs.version }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: npm run ci:pr-workflow
 
-          # Run changelog check and capture output
-          CHANGELOG_SUMMARY=$(npm run pr:changelog-summary --silent)
-          SHOULD_UPDATE=$(echo "$CHANGELOG_SUMMARY" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.shouldUpdateChangelog)")
-          CHANGELOG_UPDATED=$(echo "$CHANGELOG_SUMMARY" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.changelogUpdated)")
-          RECOMMENDATION=$(echo "$CHANGELOG_SUMMARY" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.recommendation)")
-
-          echo "changelog_should_update=$SHOULD_UPDATE" >> $GITHUB_OUTPUT
-          echo "changelog_updated=$CHANGELOG_UPDATED" >> $GITHUB_OUTPUT
-          echo "changelog_recommendation=$RECOMMENDATION" >> $GITHUB_OUTPUT
-
-          if [ "$RECOMMENDATION" = "PASS" ]; then
-            echo "✅ **CHANGELOG updated:** Changes documented in [Unreleased] section" >> $GITHUB_STEP_SUMMARY
-          elif [ "$RECOMMENDATION" = "SKIP" ]; then
-            echo "⏭️ **CHANGELOG update skipped:** Documentation/CI changes detected" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **CHANGELOG needs update:** Please document your changes" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Generate PR Summary Comment
+      - name: Update PR Comment
         uses: actions/github-script@v7
         with:
           script: |
-            const version = '${{ needs.version-consistency.outputs.version }}';
-            const versionStatus = '${{ needs.version-consistency.result }}';
-            const frontendStatus = '${{ needs.test-frontend.result }}';
-            const backendStatus = '${{ needs.test-backend.result }}';
-            const buildStatus = '${{ needs.build-tauri.result }}';
-            const changelogShouldUpdate = '${{ steps.changelog_check.outputs.changelog_should_update }}';
-            const changelogUpdated = '${{ steps.changelog_check.outputs.changelog_updated }}';
-            const changelogRecommendation = '${{ steps.changelog_check.outputs.changelog_recommendation }}';
-
-            function getStatusEmoji(status) {
-              switch(status) {
-                case 'success': return '✅';
-                case 'failure': return '❌';
-                case 'skipped': return '⏭️';
-                default: return '⚠️';
-              }
-            }
-
-            function getChangelogStatus() {
-              switch(changelogRecommendation) {
-                case 'PASS': return '✅ Updated';
-                case 'SKIP': return '⏭️ Not needed';
-                case 'UPDATE_NEEDED': return '⚠️ Needs update';
-                default: return '❓ Unknown';
-              }
-            }
-
-            const allTestsPassed = versionStatus === 'success' && frontendStatus === 'success' &&
-                                  backendStatus === 'success' && buildStatus === 'success';
-
-            const changelogOk = changelogRecommendation === 'PASS' || changelogRecommendation === 'SKIP';
-            const allPassed = allTestsPassed && changelogOk;
-
-            const body = `## 🔍 CI/CD Summary for PR #${{ github.event.number }}
-
-### 📋 Build Information
-| Item | Value |
-|------|-------|
-| **Version** | \`${version}\` |
-| **Source Branch** | \`${{ github.head_ref }}\` |
-| **Target Branch** | \`${{ github.base_ref }}\` |
-| **Commit** | \`${{ github.event.pull_request.head.sha }}\` |
-
-### 📊 Test Results
-| Check | Status | Result |
-|-------|--------|--------|
-| Version Consistency | ${getStatusEmoji(versionStatus)} | ${versionStatus} |
-| Frontend Tests | ${getStatusEmoji(frontendStatus)} | ${frontendStatus} |
-| Backend Tests | ${getStatusEmoji(backendStatus)} | ${backendStatus} |
-| Build Tests (All Platforms) | ${getStatusEmoji(buildStatus)} | ${buildStatus} |
-| CHANGELOG Update | ${changelogRecommendation === 'PASS' ? '✅' : changelogRecommendation === 'SKIP' ? '⏭️' : '⚠️'} | ${getChangelogStatus()} |
-
-### ${allPassed ? '🎉' : '⚠️'} Overall Status: ${allPassed ? 'READY TO MERGE' : 'NEEDS ATTENTION'}
-
-${allPassed ?
-  '✅ All checks passed! This PR is ready for review and merge.' :
-  `❌ ${allTestsPassed ? 'Tests passed but' : 'Some tests failed and'} ${changelogOk ? '' : 'CHANGELOG needs updating. '}Please review and fix any issues before merging.`}
-
-${changelogRecommendation === 'UPDATE_NEEDED' ?
-  `
-### 📝 CHANGELOG Update Required
-Please add your changes to the \`[Unreleased]\` section of CHANGELOG.md. If this PR doesn't require changelog updates, add one of these prefixes to the title:
-- \`docs:\` - Documentation changes
-- \`ci:\` - CI/CD changes
-- \`chore:\` - Maintenance tasks
-- \`[skip changelog]\` - Explicit skip` : ''}
-
-### 🔗 Quick Links
-- 🏃‍♂️ [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-- 📝 [View Changelog](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-- 🔧 [Repository Actions](https://github.com/${{ github.repository }}/actions)
-
----
-*This comment is automatically updated on each push to the PR.*`;
+            const body = process.env.PR_SUMMARY;
 
             // Check if there's already a comment from this bot
             const { data: comments } = await github.rest.issues.listComments({
