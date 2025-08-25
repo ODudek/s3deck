@@ -114,7 +114,7 @@ if [ -z "$VERSION" ]; then
         VERSION=$(echo "$LATEST_RELEASE" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | head -1)
         RELEASE_INFO="$LATEST_RELEASE"
     fi
-    
+
     if [ -z "$VERSION" ]; then
         echo -e "${RED}❌ Could not fetch latest release${NC}"
         exit 1
@@ -123,7 +123,7 @@ if [ -z "$VERSION" ]; then
     fi
 else
     echo -e "${BLUE}🎯 Requested version: ${CYAN}$VERSION${NC}"
-    
+
     # Get specific version release info
     RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO/releases/tags/$VERSION" 2>/dev/null)
     if [ $? -ne 0 ] || [ -z "$RELEASE_INFO" ]; then
@@ -172,20 +172,56 @@ echo -e "${GREEN}✅ Download completed${NC}"
 case $PLATFORM in
     macos)
         echo -e "${BLUE}🍎 Installing on macOS...${NC}"
-        
+
         # Remove quarantine attribute from DMG
         echo -e "${BLUE}🔧 Removing quarantine attributes...${NC}"
         xattr -cr "$DOWNLOAD_FILE" 2>/dev/null || true
-        
+
         # Mount DMG
         echo -e "${BLUE}💿 Mounting installer...${NC}"
-        MOUNT_POINT=$(hdiutil attach "$DOWNLOAD_FILE" -quiet | grep "/Volumes/" | awk '{print $3}' | head -1)
-        
-        if [ -z "$MOUNT_POINT" ]; then
-            echo -e "${RED}❌ Failed to mount installer${NC}"
+
+        # Check if file exists and is valid
+        if [ ! -f "$DOWNLOAD_FILE" ]; then
+            echo -e "${RED}❌ Downloaded file not found: $DOWNLOAD_FILE${NC}"
             exit 1
         fi
-        
+
+        # Check file size
+        FILE_SIZE=$(stat -f%z "$DOWNLOAD_FILE" 2>/dev/null || stat -c%s "$DOWNLOAD_FILE" 2>/dev/null || echo "0")
+        if [ "$FILE_SIZE" -lt 1000000 ]; then
+            echo -e "${RED}❌ Downloaded file appears to be corrupt (size: $FILE_SIZE bytes)${NC}"
+            echo -e "${YELLOW}💡 This might be an API rate limit or network issue. Try again in a few minutes.${NC}"
+            exit 1
+        fi
+
+        # Try mounting with detailed error output
+        echo -e "${BLUE}🔧 Attempting to mount DMG...${NC}"
+        MOUNT_OUTPUT=$(hdiutil attach "$DOWNLOAD_FILE" 2>&1)
+        MOUNT_EXIT_CODE=$?
+
+        if [ $MOUNT_EXIT_CODE -ne 0 ]; then
+            echo -e "${RED}❌ Failed to mount installer${NC}"
+            echo -e "${YELLOW}💡 Error details:${NC}"
+            echo "$MOUNT_OUTPUT"
+            echo ""
+            echo -e "${YELLOW}💡 Possible solutions:${NC}"
+            echo -e "   ${CYAN}1. Try running: sudo spctl --master-disable${NC}"
+            echo -e "   ${CYAN}2. Try running: xattr -cr '$DOWNLOAD_FILE'${NC}"
+            echo -e "   ${CYAN}3. Download manually from: https://github.com/$REPO/releases/latest${NC}"
+            exit 1
+        fi
+
+        MOUNT_POINT=$(echo "$MOUNT_OUTPUT" | grep "/Volumes/" | awk '{print $3}' | head -1)
+
+        if [ -z "$MOUNT_POINT" ]; then
+            echo -e "${RED}❌ Could not determine mount point${NC}"
+            echo -e "${YELLOW}💡 Mount output:${NC}"
+            echo "$MOUNT_OUTPUT"
+            exit 1
+        fi
+
+        echo -e "${GREEN}✅ DMG mounted at: $MOUNT_POINT${NC}"
+
         # Find .app in mounted volume
         APP_PATH=$(find "$MOUNT_POINT" -name "*.app" -type d | head -1)
         if [ -z "$APP_PATH" ]; then
@@ -193,40 +229,40 @@ case $PLATFORM in
             hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
             exit 1
         fi
-        
+
         # Remove existing installation
         if [ -d "$INSTALL_DIR/$APP_NAME.app" ]; then
             echo -e "${YELLOW}⚠️  Removing existing installation...${NC}"
             rm -rf "$INSTALL_DIR/$APP_NAME.app"
         fi
-        
+
         # Copy app to Applications
         echo -e "${BLUE}📁 Installing to Applications...${NC}"
         cp -R "$APP_PATH" "$INSTALL_DIR/"
-        
+
         # Fix permissions and quarantine - critical for unsigned apps
         xattr -cr "$INSTALL_DIR/$APP_NAME.app" 2>/dev/null || true
         chmod +x "$INSTALL_DIR/$APP_NAME.app/Contents/MacOS"/* 2>/dev/null || true
-        
+
         # Unmount DMG
         hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
-        
+
         FINAL_PATH="$INSTALL_DIR/$APP_NAME.app"
         ;;
-        
+
     linux)
         echo -e "${BLUE}🐧 Installing on Linux...${NC}"
-        
+
         if [ "$FILE_EXT" = "AppImage" ]; then
             # AppImage installation
             FINAL_PATH="$INSTALL_DIR/s3deck"
             cp "$DOWNLOAD_FILE" "$FINAL_PATH"
             chmod +x "$FINAL_PATH"
-            
+
             # Create desktop entry
             DESKTOP_DIR="$HOME/.local/share/applications"
             mkdir -p "$DESKTOP_DIR"
-            
+
             cat > "$DESKTOP_DIR/s3deck.desktop" << EOF
 [Desktop Entry]
 Name=S3 Deck
@@ -237,9 +273,9 @@ Type=Application
 Categories=Utility;FileManager;Network;
 StartupNotify=true
 EOF
-            
+
             echo -e "${GREEN}✅ Created desktop entry${NC}"
-            
+
         elif [ "$FILE_EXT" = "deb" ]; then
             # DEB package installation
             echo -e "${BLUE}📦 Installing DEB package...${NC}"
@@ -253,12 +289,12 @@ EOF
             fi
         fi
         ;;
-        
+
     windows)
         echo -e "${BLUE}🪟 Windows installation...${NC}"
         echo -e "${BLUE}📦 Launching installer...${NC}"
         echo -e "${YELLOW}💡 Please follow the installation wizard${NC}"
-        
+
         if command -v cmd.exe >/dev/null 2>&1; then
             # WSL environment
             cmd.exe /c "$(wslpath -w "$DOWNLOAD_FILE")" 2>/dev/null || start "$DOWNLOAD_FILE" 2>/dev/null || true
@@ -268,7 +304,7 @@ EOF
         else
             echo -e "${BLUE}💡 Please manually run: ${CYAN}$DOWNLOAD_FILE${NC}"
         fi
-        
+
         echo -e "${GREEN}✅ Installer launched. S3 Deck will be available in Start Menu after installation.${NC}"
         FINAL_PATH="Installed via MSI"
         ;;
@@ -284,18 +320,18 @@ if [ -f "$FINAL_PATH" ] || [ -d "$FINAL_PATH" ] || [ "$FINAL_PATH" = "Installed 
     echo -e "${GREEN}✅ Installation completed successfully!${NC}"
     echo ""
     echo -e "${PURPLE}🎉 S3 Deck is now installed!${NC}"
-    
+
     if [ "$FINAL_PATH" != "Installed via MSI" ]; then
         echo -e "${BLUE}📍 Location: ${CYAN}$FINAL_PATH${NC}"
     fi
-    
+
     case $PLATFORM in
         macos)
             echo ""
             echo -e "${BLUE}💡 To run S3 Deck:${NC}"
             echo -e "   ${GREEN}open '$FINAL_PATH'${NC}"
             echo -e "   ${GREEN}# or use Spotlight (⌘+Space) and type 'S3 Deck'${NC}"
-            
+
             read -p "$(echo -e ${CYAN}Do you want to open S3 Deck now? [y/N]: ${NC})" -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -307,7 +343,7 @@ if [ -f "$FINAL_PATH" ] || [ -d "$FINAL_PATH" ] || [ "$FINAL_PATH" = "Installed 
             echo -e "${BLUE}💡 To run S3 Deck:${NC}"
             echo -e "   ${GREEN}$FINAL_PATH${NC}"
             echo -e "   ${GREEN}# or find 'S3 Deck' in your application menu${NC}"
-            
+
             read -p "$(echo -e ${CYAN}Do you want to run S3 Deck now? [y/N]: ${NC})" -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -319,13 +355,13 @@ if [ -f "$FINAL_PATH" ] || [ -d "$FINAL_PATH" ] || [ "$FINAL_PATH" = "Installed 
             echo -e "${BLUE}💡 After installation, find S3 Deck in your Start Menu${NC}"
             ;;
     esac
-    
+
     echo ""
     echo -e "${PURPLE}📚 Documentation: ${CYAN}https://github.com/$REPO${NC}"
     echo -e "${PURPLE}🐛 Issues: ${CYAN}https://github.com/$REPO/issues${NC}"
     echo ""
     echo -e "${GREEN}Happy S3 managing! 🚀${NC}"
-    
+
 else
     echo -e "${RED}❌ Installation verification failed${NC}"
     echo -e "${YELLOW}💡 The app might still be installed. Check your system's application menu.${NC}"
