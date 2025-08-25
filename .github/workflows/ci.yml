@@ -10,16 +10,78 @@ env:
   CARGO_TERM_COLOR: always
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.ref }}-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
+  version-consistency:
+    name: Check Version Consistency
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      should_tag: ${{ steps.get_version.outputs.should_tag }}
+      branch_type: ${{ steps.get_version.outputs.branch_type }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check version consistency
+        id: get_version
+        run: |
+          # Run version consistency check
+          npm run check-version
+
+          # Get current version and check if tag should be created
+          VERSION=$(npm run gh:current-version --silent)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Check if we should create a tag using Node.js script
+          TAG_CHECK=$(npm run gh:check-tag --silent)
+          SHOULD_TAG=$(echo "$TAG_CHECK" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).shouldCreate")
+
+          # Override should_tag based on Git Flow rules
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # Main branch: always create release tags
+            echo "should_tag=$SHOULD_TAG" >> $GITHUB_OUTPUT
+            echo "branch_type=production" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            # Develop branch: create pre-release tags
+            echo "should_tag=$SHOULD_TAG" >> $GITHUB_OUTPUT
+            echo "branch_type=prerelease" >> $GITHUB_OUTPUT
+          else
+            # Feature/other branches: no tags
+            echo "should_tag=false" >> $GITHUB_OUTPUT
+            echo "branch_type=feature" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$SHOULD_TAG" = "true" ]; then
+            BRANCH_TYPE=$(echo "${{ github.ref }}" | sed 's|refs/heads/||')
+            if [ "$BRANCH_TYPE" = "main" ]; then
+              echo "📦 Will create production tag: v$VERSION"
+            elif [ "$BRANCH_TYPE" = "develop" ]; then
+              echo "📦 Will create pre-release tag: v$VERSION-beta"
+            fi
+          else
+            REASON=$(echo "$TAG_CHECK" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).reason || 'unknown'")
+            echo "🏷️ Will not create tag. Reason: $REASON"
+          fi
+
   test-frontend:
     name: Test Frontend
     runs-on: ubuntu-latest
+    needs: [version-consistency]
 
     steps:
       - uses: actions/checkout@v5
@@ -45,6 +107,7 @@ jobs:
   test-backend:
     name: Test Rust Backend
     runs-on: ubuntu-latest
+    needs: [version-consistency]
 
     steps:
       - uses: actions/checkout@v5
@@ -111,3 +174,61 @@ jobs:
 
       - name: Build Tauri app (test build only)
         run: npm run tauri build
+
+  create-tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    needs: [version-consistency, test-frontend, test-backend, build-tauri]
+    if: needs.version-consistency.outputs.should_tag == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Generate release notes from changelog using Node.js script
+          RELEASE_NOTES=$(node scripts/github-utils.cjs release-notes)
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.version-consistency.outputs.version }}"
+          BRANCH_TYPE="${{ needs.version-consistency.outputs.branch_type }}"
+
+          # Create appropriate tag based on branch
+          if [ "$BRANCH_TYPE" = "production" ]; then
+            # Production release from main branch
+            node scripts/github-utils.cjs create-tag "$VERSION" "Release v$VERSION"
+            echo "TAG=v$VERSION" >> $GITHUB_ENV
+          elif [ "$BRANCH_TYPE" = "prerelease" ]; then
+            # Pre-release from develop branch
+            PRERELEASE_TAG="$VERSION-beta"
+            node scripts/github-utils.cjs create-tag "$PRERELEASE_TAG" "Pre-release v$PRERELEASE_TAG"
+            echo "TAG=v$PRERELEASE_TAG" >> $GITHUB_ENV
+          fi
+
+      - name: Trigger release workflow
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use the tag that was just created
+          TAG_TO_RELEASE="$TAG"
+
+          # Trigger the tag-release workflow using Node.js script
+          node scripts/github-utils.cjs trigger-release "$TAG_TO_RELEASE"
