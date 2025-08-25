@@ -5,25 +5,26 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1] - 2025-08-25
+## [Unreleased]
+
+### Added
+- Smart context menu positioning that automatically adjusts to viewport boundaries
+- Intelligent menu placement (shows above when too close to bottom, left when too close to right)
+- Global cursor pointer styles for all interactive elements
+- Context menu margin safety zones to prevent edge clipping
+
+### Fixed
+- Button cursor pointer missing after Tailwind CSS v4 migration
+- Context menu overflow issues when right-clicking near viewport edges
+- Interactive elements not showing proper cursor on hover
+- Context menu accessibility in constrained viewport areas
+
+## [0.2.0] - 2024-08-25
 
 ### Added
 - **New Folder Creation**: Button to create new folders with comprehensive validation
 - **Folder Modification Dates**: Display latest file modification date for folders in the Modified column
 - **Smart Error Handling**: In-modal error display for better user experience and visibility
-
-### Changed
-- **Breadcrumbs Layout**: Moved breadcrumbs under search section to prevent horizontal scrolling
-- **Header Layout**: Improved spacing and organization in header components
-
-### Fixed
-- **Double Scrollbar Issue**: Removed duplicate Y-axis scrollbars in objects view
-- **Error Visibility**: Fixed server error messages being hidden behind modal overlays
-- **Folder Validation**: Added proper validation for duplicate folder names and invalid characters
-
-## [0.2.0] - 2024-08-25
-
-### Added
 - Automatic release notes generation from changelog
 - Improved CI/CD workflow with Rust-only backend
 - Enhanced drag & drop functionality with Tauri native file handling
@@ -37,12 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename option in context menu for all objects
 - Simplified notification messages showing only file/folder names instead of full paths
 - Warning notification type with appropriate styling and icon
-- Smart context menu positioning that automatically adjusts to viewport boundaries
-- Intelligent menu placement (shows above when too close to bottom, left when too close to right)
-- Global cursor pointer styles for all interactive elements
-- Context menu margin safety zones to prevent edge clipping
 
 ### Changed
+- **Breadcrumbs Layout**: Moved breadcrumbs under search section to prevent horizontal scrolling
+- **Header Layout**: Improved spacing and organization in header components
 - Migrated from Go backend to pure Rust/Tauri implementation
 - Updated GitHub Actions workflows to remove Go dependencies
 - Improved error handling and logging
@@ -58,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Legacy Tailwind v3 configuration and directives
 
 ### Fixed
+- **Double Scrollbar Issue**: Removed duplicate Y-axis scrollbars in objects view
+- **Error Visibility**: Fixed server error messages being hidden behind modal overlays
+- **Folder Validation**: Added proper validation for duplicate folder names and invalid characters
 - Tauri drag & drop file handling
 - Build process optimization
 - Development environment startup scripts
@@ -68,10 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dark mode theme switching with custom variant configuration
 - Modal and sidebar overlay transparency issues
 - CSS build process with Tailwind v4
-- Button cursor pointer missing after Tailwind CSS v4 migration
-- Context menu overflow issues when right-clicking near viewport edges
-- Interactive elements not showing proper cursor on hover
-- Context menu accessibility in constrained viewport areas
 
 ### Security
 - Removed network-based communication in favor of secure IPC
