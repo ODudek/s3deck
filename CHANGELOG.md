@@ -5,7 +5,7 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2024-08-24
+## [0.2.0] - 2024-08-25
 
 ### Added
 - Automatic release notes generation from changelog
@@ -14,7 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved upload progress tracking and error reporting
 - Better file size validation and formatting
 - Debug mode toggle in settings for development
-### Added
 - File and folder rename functionality with smart content-type detection
 - Support for changing file extensions during rename (automatically updates MIME type)
 - Comprehensive filename validation with cross-platform compatibility
@@ -27,11 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migrated from Go backend to pure Rust/Tauri implementation
 - Updated GitHub Actions workflows to remove Go dependencies
 - Improved error handling and logging
+- **BREAKING**: Upgraded to Tailwind CSS v4.1.12 with new configuration system
+- Updated PostCSS configuration for Tailwind v4 compatibility
+- Migrated CSS imports from `@tailwind` directives to `@import "tailwindcss"`
+- Updated opacity syntax from `bg-opacity-*` to new slash notation (`bg-black/50`)
 
 ### Removed
 - Go backend implementation and dependencies
 - HTML drag & drop support (Tauri native only)
 - Debug console.log statements from production code
+- Legacy Tailwind v3 configuration and directives
 
 ### Fixed
 - Tauri drag & drop file handling
@@ -41,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upload progress reporting accuracy
 - Memory usage optimization during file operations
 - Cross-platform file path handling
+- Dark mode theme switching with custom variant configuration
+- Modal and sidebar overlay transparency issues
+- CSS build process with Tailwind v4
 
 ### Security
 - Removed network-based communication in favor of secure IPC

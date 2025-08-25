@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* Custom dark mode variant for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
 
 /* Custom Range Slider Styles */
 .slider {
