@@ -20,21 +20,21 @@ const {
   execCommand
 } = require('./ci-utils.cjs');
 
+const { checkVersionConsistency: checkVersionsDirectly } = require('./check-version-consistency.cjs');
+
 function checkVersionConsistency() {
   log('🔍 Checking version consistency across all files...', 'blue');
 
   try {
-    // Run the existing version check script
-    const result = execCommand('npm run check-version');
+    // Use the direct function instead of npm command to avoid exit code issues
+    const result = checkVersionsDirectly(true); // silent mode
 
     if (!result.success) {
-      throw new Error('Version consistency check failed');
+      throw new Error(result.errors ? result.errors.join(', ') : result.error || 'Version consistency check failed');
     }
 
-    const version = getCurrentVersion();
-    log(`✅ All versions are consistent: ${version}`, 'green');
-
-    return { success: true, version };
+    log(`✅ All versions are consistent: ${result.version}`, 'green');
+    return { success: true, version: result.version };
   } catch (error) {
     log(`❌ Version consistency check failed: ${error.message}`, 'red');
     return { success: false, error: error.message };
