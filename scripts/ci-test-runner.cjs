@@ -26,11 +26,21 @@ function runFrontendTests() {
   addToGitHubSummary('');
 
   try {
-    // Try to run tests, fallback to "no tests found" message
-    const result = execCommand('npm test');
+    // First capture output to check for "No tests found"
+    const result = execCommand('npm test', { silent: true });
     const duration = formatDuration(startTime);
 
     if (result.success) {
+      // Check if output indicates no tests found
+      if (result.output && result.output.includes('No tests found')) {
+        log('⚠️ No frontend tests found', 'yellow');
+        addToGitHubSummary('⚠️ **No frontend tests found**');
+        addToGitHubSummary('Consider adding tests for better code quality.');
+        addToGitHubSummary(`⏱️ Duration: ${duration}`);
+        setGitHubEnv('FRONTEND_TEST_STATUS', '⚠️ No tests');
+        return { success: true, duration, noTests: true };
+      }
+
       log('✅ Frontend tests passed', 'green');
       addToGitHubSummary('✅ **Frontend tests passed**');
       addToGitHubSummary(`⏱️ Duration: ${duration}`);
@@ -40,7 +50,7 @@ function runFrontendTests() {
       throw new Error('Frontend tests failed');
     }
   } catch (error) {
-    // Check if it's just "no tests found"
+    // Check if it's just "no tests found" in error output
     if (error.message.includes('no test') || error.message.includes('No tests found')) {
       log('⚠️ No frontend tests found', 'yellow');
       addToGitHubSummary('⚠️ **No frontend tests found**');
@@ -57,6 +67,7 @@ function runFrontendTests() {
     setGitHubEnv('FRONTEND_TEST_STATUS', '❌ Failed');
     return { success: false, duration, error: error.message };
   }
+
 }
 
 function runBackendTests() {
@@ -69,7 +80,8 @@ function runBackendTests() {
   try {
     const result = execCommand('cargo test', {
       cwd: 'src-tauri',
-      env: { ...process.env, RUST_BACKTRACE: '1' }
+      env: { ...process.env, RUST_BACKTRACE: '1' },
+      silent: true
     });
     const duration = formatDuration(startTime);
 
@@ -101,26 +113,21 @@ function runBuildTest(platform = 'current') {
   addToGitHubSummary('');
 
   try {
-    // First build frontend
+    // Only build frontend for faster CI tests
+    // Full Tauri build will be done in release workflow
     log('📦 Building frontend...', 'blue');
-    const frontendResult = execCommand('npm run build');
-    if (!frontendResult.success) {
-      throw new Error('Frontend build failed');
-    }
-
-    // Then build Tauri app
-    log('🦀 Building Tauri application...', 'blue');
-    const tauriResult = execCommand('npm run tauri:build');
+    const frontendResult = execCommand('npm run build', { silent: true });
     const duration = formatDuration(startTime);
 
-    if (tauriResult.success) {
-      log(`✅ Build successful on ${platform}`, 'green');
-      addToGitHubSummary(`✅ **Build successful on ${platform}**`);
+    if (frontendResult.success) {
+      log(`✅ Frontend build successful on ${platform}`, 'green');
+      addToGitHubSummary(`✅ **Frontend build successful on ${platform}**`);
       addToGitHubSummary(`⏱️ Duration: ${duration}`);
+      addToGitHubSummary('ℹ️ Full Tauri build will be performed during release');
       setGitHubEnv('BUILD_TEST_STATUS', '✅ Passed');
       return { success: true, duration, platform };
     } else {
-      throw new Error('Tauri build failed');
+      throw new Error('Frontend build failed');
     }
   } catch (error) {
     const duration = formatDuration(startTime);
