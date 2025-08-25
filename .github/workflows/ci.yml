@@ -48,8 +48,8 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
           # Check if we should create a tag using Node.js script
-          TAG_CHECK=$(npm run gh:check-tag --silent)
-          SHOULD_TAG=$(echo "$TAG_CHECK" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).shouldCreate")
+          TAG_CHECK=$(node scripts/github-utils.cjs check-tag)
+          SHOULD_TAG=$(echo "$TAG_CHECK" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.shouldCreate)")
 
           # Override should_tag based on Git Flow rules
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
@@ -74,7 +74,7 @@ jobs:
               echo "📦 Will create pre-release tag: v$VERSION-beta"
             fi
           else
-            REASON=$(echo "$TAG_CHECK" | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8')).reason || 'unknown'")
+            REASON=$(echo "$TAG_CHECK" | node -e "const data = JSON.parse(require('fs').readFileSync(0, 'utf8')); console.log(data.reason || 'unknown')")
             echo "🏷️ Will not create tag. Reason: $REASON"
           fi
 

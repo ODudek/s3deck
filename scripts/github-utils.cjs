@@ -155,15 +155,15 @@ function triggerWorkflow(workflowFile, inputs = {}) {
   return true;
 }
 
-function shouldCreateTag() {
+function shouldCreateTag(silent = false) {
   const version = getCurrentVersion();
   const tag = `v${version}`;
 
-  log(`🔍 Checking if tag ${tag} should be created...`, 'blue');
+  if (!silent) log(`🔍 Checking if tag ${tag} should be created...`, 'blue');
 
   // Check if tag already exists
   if (checkTagExists(tag)) {
-    log(`🏷️  Tag ${tag} already exists`, 'yellow');
+    if (!silent) log(`🏷️  Tag ${tag} already exists`, 'yellow');
     return { shouldCreate: false, version, tag, reason: 'tag_exists' };
   }
 
@@ -182,11 +182,11 @@ function shouldCreateTag() {
 
   // Only create tags on main or develop branches
   if (branchType === 'feature') {
-    log(`⚠️  Not on main/develop branch (current: ${currentBranch})`, 'yellow');
+    if (!silent) log(`⚠️  Not on main/develop branch (current: ${currentBranch})`, 'yellow');
     return { shouldCreate: false, version, tag, reason: 'not_release_branch', currentBranch, branchType };
   }
 
-  log(`✅ Tag ${tag} should be created on ${branchType} branch`, 'green');
+  if (!silent) log(`✅ Tag ${tag} should be created on ${branchType} branch`, 'green');
   return { shouldCreate: true, version, tag, branchType };
 }
 
@@ -211,7 +211,7 @@ function main() {
 
   switch (command) {
     case 'check-tag':
-      const check = shouldCreateTag();
+      const check = shouldCreateTag(true); // Silent mode for JSON output
       console.log(JSON.stringify(check));
       break;
 
