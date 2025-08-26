@@ -145,6 +145,6 @@ jobs:
             ${{ steps.release_notes.outputs.RELEASE_NOTES || 'See [CHANGELOG.md](https://github.com/ODudek/s3deck/blob/main/CHANGELOG.md) for detailed changes.' }}
           releaseDraft: false
           prerelease: ${{ contains(needs.get-tag.outputs.tag, 'beta') || contains(needs.get-tag.outputs.tag, 'alpha') || contains(needs.get-tag.outputs.tag, 'rc') }}
-          buildCommand: npx @tauri-apps/cli build
+          tauriScript: npx @tauri-apps/cli
           args: ${{ matrix.args }}
           includeUpdaterJson: false
