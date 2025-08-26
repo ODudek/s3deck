@@ -34,7 +34,7 @@ function execCommand(command, options = {}) {
       stdio: options.silent ? 'pipe' : 'inherit',
       ...options
     });
-    return { success: true, output: result.trim() };
+    return { success: true, output: result ? result.trim() : '' };
   } catch (error) {
     return {
       success: false,
