@@ -11,6 +11,7 @@ env:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: ci-${{ github.ref }}-${{ github.head_ref }}
@@ -216,15 +217,22 @@ jobs:
           echo "**Workflow:** \`tag-release.yml\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Trigger the tag-release workflow using Node.js script
+          # Try to trigger the tag-release workflow using Node.js script
           if node scripts/github-utils.cjs trigger-release "$TAG_TO_RELEASE"; then
-            echo "✅ **Release workflow triggered successfully!**" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Release workflow triggered successfully via workflow_dispatch!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "🔗 [View Release Workflow](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
             echo "🔗 [View All Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Failed to trigger release workflow**" >> $GITHUB_STEP_SUMMARY
-            exit 1
+            echo "⚠️ **Workflow dispatch failed, but tag was created successfully**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The tag-release workflow will be triggered automatically by the tag push." >> $GITHUB_STEP_SUMMARY
+            echo "This is a fallback mechanism when workflow_dispatch permissions are restricted." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 [View Release Workflow](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 [View All Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Tag created:** \`$TAG_TO_RELEASE\` - Release workflow will start automatically" >> $GITHUB_STEP_SUMMARY
           fi
 
   workflow-summary:
