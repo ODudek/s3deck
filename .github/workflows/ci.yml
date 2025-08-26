@@ -11,7 +11,6 @@ env:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: ci-${{ github.ref }}-${{ github.head_ref }}
@@ -203,37 +202,26 @@ jobs:
             echo "✅ **Successfully created pre-release tag:** \`v$PRERELEASE_TAG\`" >> $GITHUB_STEP_SUMMARY
           fi
 
-      - name: Trigger release workflow
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag Created Successfully
         run: |
           # Use the tag that was just created
           TAG_TO_RELEASE="$TAG"
 
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🚀 Triggering Release Workflow" >> $GITHUB_STEP_SUMMARY
+          echo "## 🏷️ Tag Created Successfully" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Release Tag:** \`$TAG_TO_RELEASE\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Workflow:** \`tag-release.yml\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Created Tag:** \`$TAG_TO_RELEASE\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Release:** Manual trigger required" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Try to trigger the tag-release workflow using Node.js script
-          if node scripts/github-utils.cjs trigger-release "$TAG_TO_RELEASE"; then
-            echo "✅ **Release workflow triggered successfully via workflow_dispatch!**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🔗 [View Release Workflow](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
-            echo "🔗 [View All Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "⚠️ **Workflow dispatch failed, but tag was created successfully**" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "The tag-release workflow will be triggered automatically by the tag push." >> $GITHUB_STEP_SUMMARY
-            echo "This is a fallback mechanism when workflow_dispatch permissions are restricted." >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "🔗 [View Release Workflow](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
-            echo "🔗 [View All Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **Tag created:** \`$TAG_TO_RELEASE\` - Release workflow will start automatically" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ **Tag created successfully!** To create a release:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to [GitHub Actions → Tag Release](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
+          echo "2. Click **Run workflow**" >> $GITHUB_STEP_SUMMARY
+          echo "3. Enter tag: \`$TAG_TO_RELEASE\`" >> $GITHUB_STEP_SUMMARY
+          echo "4. Click **Run workflow** to build and release" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [Manual Release Trigger](https://github.com/${{ github.repository }}/actions/workflows/tag-release.yml)" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View All Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
 
   workflow-summary:
     name: Workflow Summary

@@ -34,38 +34,11 @@ jobs:
       - name: Get tag information
         id: get_tag
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual trigger with specific tag
-            TAG="${{ inputs.tag }}"
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "Manual release for tag: $TAG"
-          elif [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
-            # Triggered by CI workflow - check if new tag was created
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
-            if [ -n "$LATEST_TAG" ]; then
-              # Check if this tag has a release already using Node.js script
-              RELEASE_EXISTS=$(node scripts/github-utils.cjs release-exists "$LATEST_TAG")
-
-              if [ "$RELEASE_EXISTS" = "false" ]; then
-                echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
-                echo "should_release=true" >> $GITHUB_OUTPUT
-                echo "New tag found without release: $LATEST_TAG"
-              else
-                echo "should_release=false" >> $GITHUB_OUTPUT
-                echo "Tag $LATEST_TAG already has a release"
-              fi
-            else
-              echo "should_release=false" >> $GITHUB_OUTPUT
-              echo "No tags found"
-            fi
-          else
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "CI workflow did not succeed"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Manual trigger with specific tag
+          TAG="${{ inputs.tag }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "should_release=true" >> $GITHUB_OUTPUT
+          echo "Manual release for tag: $TAG"
 
   release:
     name: Build and Release
