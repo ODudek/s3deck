@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "echo 'No tests found'",
     "dev:tauri": "tauri dev",
-    "tauri": "tauri",
+    "tauri": "npx @tauri-apps/cli",
     "tauri:build": "tauri build",
     "start": "npm run dev:tauri",
     "release-notes": "node scripts/generate-release-notes.cjs",
