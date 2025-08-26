@@ -34,11 +34,11 @@ function execCommand(command, options = {}) {
       stdio: options.silent ? 'pipe' : 'inherit',
       ...options
     });
-    return { success: true, output: result.trim() };
+    return { success: true, output: result ? result.trim() : '' };
   } catch (error) {
     return {
       success: false,
-      error: error.message,
+      error: error.message || 'Unknown error',
       output: error.stdout ? error.stdout.trim() : '',
       stderr: error.stderr ? error.stderr.trim() : ''
     };
