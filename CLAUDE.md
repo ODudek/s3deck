@@ -51,6 +51,9 @@ The Rust backend provides the following Tauri commands for frontend-backend comm
 - `get_object_metadata` — retrieves detailed object information
 - `upload_files` — uploads files/folders to S3 bucket
 - `count_files` — counts files for upload progress tracking
+- `get_folder_latest_modified` — retrieves latest modification date for folder contents
+- `create_folder` — creates new folders with validation
+- `rename_object` — renames files and folders with content-type detection
 
 Configuration example (stored in `~/.s3deck/config.json`):
 {
@@ -89,13 +92,17 @@ Key features:
 - Proper error handling with custom error types that serialize for frontend consumption
 - UTC timestamps with proper timezone handling
 - Recursive directory upload support with progress tracking
+- Universal drag & drop logic that correctly handles folders at any filesystem depth
+- Smart S3 key building that preserves only the dragged item structure
 
 ## Frontend — important notes
 - Frontend communicates with the Rust backend via Tauri's `invoke()` function (imported from `@tauri-apps/api/core`)
 - All S3 operations are performed through Tauri commands - no HTTP requests needed
 - UI code is in `src/components/` (examples: `BucketsTable.jsx`, `ObjectsTable.jsx`, `AddBucketModal.jsx`)
-- Built with React + Vite + Tailwind
+- Built with React + Vite + Tailwind CSS v4
 - Upload functionality supports drag & drop of files and folders with Tauri's native file handling
+- Settings are managed through `SettingsContext.jsx` with localStorage persistence
+- Consistent styling uses `text-gray-900 dark:text-gray-300` for main text, `text-gray-500 dark:text-gray-400` for secondary text
 
 ## Building and releasing
 1. Build the frontend:
@@ -137,6 +144,8 @@ This creates platform-specific installers in `src-tauri/target/release/bundle/` 
 ## Quick file map — useful files to inspect
 - `src/App.jsx` — main frontend component
 - `src/components/*` — UI components
+- `src/components/ConfigView.jsx` — Settings/configuration interface
+- `src/contexts/SettingsContext.jsx` — Application settings management
 - `src/hooks/useS3Operations.js` — S3 operations hooks using Tauri invoke
 - `src/hooks/useUpload.js` — Upload functionality with drag & drop support
 - `src-tauri/src/lib.rs` — Tauri app setup and command registration
@@ -145,6 +154,19 @@ This creates platform-specific installers in `src-tauri/target/release/bundle/` 
 - `src-tauri/src/models.rs` — Data structures and error types
 - `src-tauri/Cargo.toml` — Rust dependencies and Tauri configuration
 - `dev.sh` — convenience script to run the dev environment
+- `docs/demo.gif` — Application demo for README
+
+## Application Settings System
+Settings are managed through React Context (`SettingsContext.jsx`) with localStorage persistence:
+
+Default settings:
+- `theme: 'light'` — UI theme (light/dark/auto)
+- `maxFileSize: 100` — Maximum upload file size in MB
+- `showHiddenFiles: false` — Display files starting with dot
+- `showFolderModifiedDates: false` — Display folder modification dates (performance impact)
+- `autoRefresh: true` — Automatically refresh object lists
+- `autoRefreshInterval: 30` — Refresh interval in seconds
+- `confirmDelete: true` — Show confirmation dialogs before deletions
 
 ## Notes for assistant agents (Claude)
 - Use this file as a quick reference for running the project, debugging common issues, and locating primary integration points.
@@ -153,4 +175,6 @@ This creates platform-specific installers in `src-tauri/target/release/bundle/` 
   - `src-tauri/src/s3_client.rs` for S3 operations
   - `src-tauri/src/models.rs` for data structures
   - Corresponding frontend components in `src/components/`
+- For settings-related changes, check `src/contexts/SettingsContext.jsx` and `src/components/ConfigView.jsx`
 - The backend is implemented in pure Rust using Tauri's IPC system for frontend-backend communication.
+- When debugging drag & drop issues, focus on `useUpload.js` basePath calculation and `commands.rs` build_s3_key function.

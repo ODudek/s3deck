@@ -55,12 +55,42 @@ export const useUpload = (selectedBucketRef, currentPathRef, showNotification, l
     showNotification(`Uploading ${totalFileCount} file${totalFileCount !== 1 ? 's' : ''}...`, 'info');
 
     try {
-      // Find common base path for maintaining folder structure
+      // Universal drag & drop logic: find the common parent of all dragged files
+      // to determine what was actually dragged
       let basePath = '';
-      if (filePaths.length > 1) {
-        const commonPath = filePaths[0].split('/').slice(0, -1).join('/');
-        if (filePaths.every(path => path.startsWith(commonPath))) {
-          basePath = commonPath;
+
+      if (filePaths.length > 0) {
+        if (filePaths.length === 1) {
+          // Single item: use its parent as base path
+          const path = filePaths[0];
+          const pathParts = path.split('/');
+          basePath = pathParts.slice(0, -1).join('/');
+        } else {
+          // Multiple items: find their deepest common parent directory
+          let commonParts = filePaths[0].split('/');
+
+          for (let i = 1; i < filePaths.length; i++) {
+            const currentParts = filePaths[i].split('/');
+            const minLength = Math.min(commonParts.length, currentParts.length);
+
+            // Find where paths diverge
+            let divergeIndex = 0;
+            for (let j = 0; j < minLength; j++) {
+              if (commonParts[j] === currentParts[j]) {
+                divergeIndex = j + 1;
+              } else {
+                break;
+              }
+            }
+
+            commonParts = commonParts.slice(0, divergeIndex);
+          }
+
+          // The common path should be the parent of the dragged item
+          // Remove one more level to get the actual base path
+          if (commonParts.length > 0) {
+            basePath = commonParts.slice(0, -1).join('/');
+          }
         }
       }
 
@@ -72,12 +102,12 @@ export const useUpload = (selectedBucketRef, currentPathRef, showNotification, l
           files: filePaths
         }
       });
-      
+
       // Show detailed message based on results
       const uploadedCount = result.uploadedFiles ? result.uploadedFiles.length : 0;
       const failedCount = result.failedFiles ? result.failedFiles.length : 0;
       const firstError = result.failedFiles && result.failedFiles.length > 0 ? result.failedFiles[0].error : '';
-      
+
       if (failedCount > 0) {
         if (uploadedCount === 0) {
           showNotification(`Upload failed: All ${failedCount} files failed. ${firstError}`, 'error');

@@ -15,6 +15,7 @@ const defaultSettings = {
   defaultUploadPath: '',
   maxFileSize: 100,
   showHiddenFiles: false,
+  showFolderModifiedDates: false,
   autoRefresh: true,
   autoRefreshInterval: 30,
   confirmDelete: true
@@ -43,7 +44,7 @@ export const SettingsProvider = ({ children }) => {
   const updateSetting = (key, value) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
-    
+
     try {
       localStorage.setItem('s3deck-settings', JSON.stringify(newSettings));
     } catch (error) {
@@ -55,7 +56,7 @@ export const SettingsProvider = ({ children }) => {
   const updateSettings = (newSettings) => {
     const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
-    
+
     try {
       localStorage.setItem('s3deck-settings', JSON.stringify(updatedSettings));
     } catch (error) {

@@ -30,13 +30,13 @@ const formatFileSize = (bytes) => {
 };
 
 // Helper component to display folder modification date
-const FolderModifiedDate = ({ folderKey, selectedBucket }) => {
+const FolderModifiedDate = ({ folderKey, selectedBucket, showFolderModifiedDates }) => {
   const [modifiedDate, setModifiedDate] = React.useState(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchFolderModified = async () => {
-      if (!selectedBucket || !folderKey) {
+      if (!selectedBucket || !folderKey || !showFolderModifiedDates) {
         setIsLoading(false);
         return;
       }
@@ -57,7 +57,11 @@ const FolderModifiedDate = ({ folderKey, selectedBucket }) => {
     };
 
     fetchFolderModified();
-  }, [folderKey, selectedBucket]);
+  }, [folderKey, selectedBucket, showFolderModifiedDates]);
+
+  if (!showFolderModifiedDates) {
+    return <span>-</span>;
+  }
 
   if (isLoading) {
     return <span className="text-xs">...</span>;
@@ -306,8 +310,8 @@ export default function ObjectsTable({
                     {item.isFolder ? "-" : formatFileSize(item.size)}
                   </td>
                   <td className="hidden md:table-cell px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {item.isFolder 
-                      ? <FolderModifiedDate folderKey={item.key} selectedBucket={selectedBucket} />
+                    {item.isFolder
+                      ? <FolderModifiedDate folderKey={item.key} selectedBucket={selectedBucket} showFolderModifiedDates={settings.showFolderModifiedDates} />
                       : formatLastModified(item.lastModified)
                     }
                   </td>

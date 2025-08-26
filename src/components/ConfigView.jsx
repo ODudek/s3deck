@@ -36,7 +36,7 @@ export default function ConfigView({
     <div className="p-6 max-w-4xl mx-auto dark:text-white">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Configuration</h1>
-        <p className="text-gray-600 dark:text-gray-400">Manage your application settings and bucket configurations</p>
+        <p className="text-gray-500 dark:text-gray-400">Manage your application settings and bucket configurations</p>
       </div>
 
       {/* Application Settings */}
@@ -49,7 +49,7 @@ export default function ConfigView({
           {/* Theme */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</label>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Theme</label>
               <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred color theme</p>
             </div>
             <div className="relative">
@@ -73,7 +73,7 @@ export default function ConfigView({
           {/* Max File Size */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Maximum Upload File Size</label>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Maximum Upload File Size</label>
               <p className="text-sm text-gray-500 dark:text-gray-400">Maximum size for individual file uploads</p>
             </div>
             <div className="flex items-center space-x-2">
@@ -88,14 +88,14 @@ export default function ConfigView({
                   background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(settings.maxFileSize / 1024) * 100}%, #e5e7eb ${(settings.maxFileSize / 1024) * 100}%, #e5e7eb 100%)`
                 }}
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400 w-16">{formatFileSize(settings.maxFileSize)}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 w-16">{formatFileSize(settings.maxFileSize)}</span>
             </div>
           </div>
 
           {/* Auto Refresh */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto Refresh</label>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Auto Refresh</label>
               <p className="text-sm text-gray-500 dark:text-gray-400">Automatically refresh object lists</p>
             </div>
             <label className="toggle-switch">
@@ -112,8 +112,8 @@ export default function ConfigView({
           {settings.autoRefresh && (
             <div className="flex items-center justify-between pl-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Refresh Interval</label>
-                <p className="text-sm text-gray-500">How often to refresh (seconds)</p>
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Refresh Interval</label>
+                <p className="text-sm text-gray-500 dark:text-gray-400">How often to refresh (seconds)</p>
               </div>
               <div className="relative">
                 <select
@@ -138,8 +138,8 @@ export default function ConfigView({
           {/* Show Hidden Files */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Show Hidden Files</label>
-              <p className="text-sm text-gray-500">Display files starting with a dot</p>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Show Hidden Files</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Display files starting with a dot</p>
             </div>
             <label className="toggle-switch">
               <input
@@ -154,14 +154,30 @@ export default function ConfigView({
           {/* Confirm Delete */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="text-sm font-medium text-gray-700">Confirm Deletions</label>
-              <p className="text-sm text-gray-500">Ask for confirmation before deleting files</p>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Confirm Deletions</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Ask for confirmation before deleting files</p>
             </div>
             <label className="toggle-switch">
               <input
                 type="checkbox"
                 checked={settings.confirmDelete}
                 onChange={(e) => updateSetting('confirmDelete', e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          {/* Show Folder Modified Dates */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-300">Show Folder Modified Dates</label>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Display modification dates for folders (may be slow)</p>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={settings.showFolderModifiedDates}
+                onChange={(e) => updateSetting('showFolderModifiedDates', e.target.checked)}
               />
               <span className="toggle-slider"></span>
             </label>
@@ -206,12 +222,12 @@ export default function ConfigView({
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 dark:text-white">{bucket.displayName}</h3>
                       <div className="mt-1 space-y-1">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Bucket: {bucket.name}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Region: {bucket.region}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Bucket: {bucket.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Region: {bucket.region}</p>
                         {bucket.endpoint && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Endpoint: {bucket.endpoint}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Endpoint: {bucket.endpoint}</p>
                         )}
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Access Key: {bucket.accessKey.substring(0, 8)}...</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Access Key: {bucket.accessKey.substring(0, 8)}...</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -257,7 +273,7 @@ export default function ConfigView({
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Delete Bucket Configuration</h3>
                 </div>
               </div>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-6">
                 Are you sure you want to delete this bucket configuration? This action cannot be undone.
               </p>
               <div className="flex justify-end space-x-3">

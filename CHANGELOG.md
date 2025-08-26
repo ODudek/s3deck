@@ -5,6 +5,22 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2025-01-01
+
+### Added
+- **Show Folder Modified Dates Setting**: New toggle in Configuration to control folder modification date display (default: disabled for better performance)
+- Demo GIF in README with dedicated Preview section for better project showcase
+
+### Fixed
+- **Critical Drag & Drop Bug**: Fixed issue where dragging a folder would upload the entire parent directory instead of just the selected folder
+- **Universal Drag & Drop Logic**: Implemented proper common parent path detection that works for folders at any depth
+- **S3 Key Building**: Corrected backend logic to properly handle dragged items regardless of their filesystem location
+
+### Changed
+- **Consistent Text Colors**: Unified all text colors in Configuration view to use consistent gray-800/gray-300 pattern for better readability
+- **Performance Optimization**: Folder modification dates are now opt-in to prevent slow S3 API calls and potential errors
+- **Better Error Handling**: Improved error messaging for folder date fetching with graceful fallbacks
+
 ## [0.2.1] - 2024-08-25
 
 ### Added

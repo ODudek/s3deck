@@ -228,32 +228,9 @@ fn build_s3_key(base_path: &str, current_path: &str, file_path: &str) -> Result<
             }
         }
     } else {
-        // For drag & drop of folders, we want to preserve the folder name and structure
-        // Find the top-level folder name from the path
-        let path_components: Vec<&str> = file_path.split('/').collect();
-        if path_components.len() > 1 {
-            // Find a reasonable starting point - look for common parent directories to skip
-            let mut start_idx = 0;
-            for (i, component) in path_components.iter().enumerate() {
-                if *component == "Documents" || *component == "Desktop" || *component == "Downloads"
-                {
-                    start_idx = i + 1;
-                    break;
-                }
-            }
-
-            // If no common directory found, and we have multiple components,
-            // use the last 2 components (folder/file.ext)
-            if start_idx == 0 && path_components.len() > 2 {
-                start_idx = path_components.len() - 2;
-            }
-
-            if start_idx < path_components.len() {
-                let relative_path = path_components[start_idx..].join("/");
-                s3_key.push_str(&relative_path);
-                return Ok(s3_key);
-            }
-        }
+        // For drag & drop, just use the filename - let the frontend handle folder structure
+        s3_key.push_str(file_name);
+        return Ok(s3_key);
     }
 
     // Fallback: just add the filename
@@ -282,7 +259,10 @@ fn count_files_in_directory(dir: &Path) -> Result<usize> {
 }
 
 #[command]
-pub async fn get_folder_latest_modified(bucket_id: String, folder_key: String) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+pub async fn get_folder_latest_modified(
+    bucket_id: String,
+    folder_key: String,
+) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
     let config_manager = ConfigManager::new()?;
     let bucket_config = config_manager.get_bucket(&bucket_id)?;
 

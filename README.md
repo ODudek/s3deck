@@ -2,7 +2,7 @@
 
 A modern, cross-platform desktop application for managing S3-compatible object storage. Built with Tauri and React, S3 Deck provides an intuitive file manager interface for browsing, uploading, and managing files in your S3 buckets.
 
-![S3 Deck Screenshot](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+![Platforms](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 [![CI](https://github.com/ODudek/s3deck/actions/workflows/ci.yml/badge.svg)](https://github.com/ODudek/s3deck/actions/workflows/ci.yml)
 
@@ -60,7 +60,7 @@ curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bas
 - ✅ **No prerequisites** - just works out of the box!
 
 **Installation locations:**
-- 🍎 **macOS**: `/Applications/S3Deck.app` 
+- 🍎 **macOS**: `/Applications/S3Deck.app`
 - 🐧 **Linux**: `~/.local/bin/s3deck` + desktop entry
 - 🪟 **Windows**: Launches MSI installer
 
