@@ -24,6 +24,12 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 - **Upload Progress**: Real-time upload status and error reporting
 - **Modern UI**: Built with Tailwind CSS v4 for enhanced performance and styling
 
+## 📸 Preview
+
+![S3 Deck Demo](docs/demo.gif)
+
+*See S3 Deck in action - browse buckets, upload files, and manage your S3 storage with ease.*
+
 ## 🚀 Quick Start
 
 ### Prerequisites
