@@ -14,20 +14,36 @@ pub struct S3Client {
 
 impl S3Client {
     pub async fn new(bucket_config: &BucketConfig) -> Result<Self> {
-        let credentials = Credentials::new(
-            &bucket_config.access_key,
-            &bucket_config.secret_key,
-            None,
-            None,
-            "s3deck",
-        );
-
         let region = Region::new(bucket_config.region.clone());
 
         let mut config_builder = Config::builder()
-            .credentials_provider(credentials)
-            .region(region)
+            .region(region.clone())
             .behavior_version(BehaviorVersion::latest());
+
+        // If access_key and secret_key are provided, use them directly
+        // Otherwise, use default AWS credential provider (supports AWS profiles)
+        if !bucket_config.access_key.is_empty() && !bucket_config.secret_key.is_empty() {
+            let credentials = Credentials::new(
+                &bucket_config.access_key,
+                &bucket_config.secret_key,
+                None,
+                None,
+                "s3deck",
+            );
+            config_builder = config_builder.credentials_provider(credentials);
+        } else {
+            // Use AWS profile if specified, otherwise use default credential provider chain
+            let mut aws_config_builder =
+                aws_config::defaults(BehaviorVersion::latest()).region(region.clone());
+
+            if let Some(profile_name) = &bucket_config.aws_profile {
+                aws_config_builder = aws_config_builder.profile_name(profile_name);
+            }
+
+            let aws_config = aws_config_builder.load().await;
+            config_builder =
+                config_builder.credentials_provider(aws_config.credentials_provider().unwrap());
+        }
 
         // Set custom endpoint if provided
         if let Some(endpoint) = &bucket_config.endpoint {
@@ -322,7 +338,8 @@ impl S3Client {
         };
 
         // Check if folder already exists by trying to head the object
-        match self.client
+        match self
+            .client
             .head_object()
             .bucket(&self.bucket_name)
             .key(&folder_key)
@@ -332,7 +349,7 @@ impl S3Client {
             Ok(_) => {
                 // Folder already exists
                 return Err(S3DeckError::S3(format!(
-                    "Folder '{}' already exists", 
+                    "Folder '{}' already exists",
                     folder_key.trim_end_matches('/')
                 )));
             }
@@ -343,7 +360,8 @@ impl S3Client {
 
         // Also check if there's a folder with the same name by listing objects
         // This handles cases where the folder might exist as a common prefix
-        let list_response = self.client
+        let list_response = self
+            .client
             .list_objects_v2()
             .bucket(&self.bucket_name)
             .prefix(&folder_key)
@@ -355,7 +373,7 @@ impl S3Client {
         // Check if there are any objects with this prefix (meaning folder exists)
         if list_response.contents().len() > 0 || list_response.common_prefixes().len() > 0 {
             return Err(S3DeckError::S3(format!(
-                "Folder '{}' already exists", 
+                "Folder '{}' already exists",
                 folder_key.trim_end_matches('/')
             )));
         }
@@ -373,10 +391,16 @@ impl S3Client {
             .await
             .map_err(|e| S3DeckError::S3(format!("Failed to create folder: {}", e)))?;
 
-        Ok(format!("Folder '{}' created successfully", folder_key.trim_end_matches('/')))
+        Ok(format!(
+            "Folder '{}' created successfully",
+            folder_key.trim_end_matches('/')
+        ))
     }
 
-    pub async fn get_folder_latest_modified(&self, folder_prefix: &str) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
+    pub async fn get_folder_latest_modified(
+        &self,
+        folder_prefix: &str,
+    ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
         let mut latest_modified: Option<chrono::DateTime<chrono::Utc>> = None;
         let mut continuation_token = None;
 
@@ -403,8 +427,12 @@ impl S3Client {
                         continue;
                     }
 
-                    let object_date = DateTime::from_timestamp(last_modified.secs(), last_modified.subsec_nanos()).unwrap_or_default();
-                    
+                    let object_date = DateTime::from_timestamp(
+                        last_modified.secs(),
+                        last_modified.subsec_nanos(),
+                    )
+                    .unwrap_or_default();
+
                     match latest_modified {
                         None => latest_modified = Some(object_date),
                         Some(current_latest) if object_date > current_latest => {

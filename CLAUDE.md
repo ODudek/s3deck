@@ -98,7 +98,16 @@ Key features:
 ## Frontend — important notes
 - Frontend communicates with the Rust backend via Tauri's `invoke()` function (imported from `@tauri-apps/api/core`)
 - All S3 operations are performed through Tauri commands - no HTTP requests needed
-- UI code is in `src/components/` (examples: `BucketsTable.jsx`, `ObjectsTable.jsx`, `AddBucketModal.jsx`)
+- **NEW MODULAR ARCHITECTURE** with organized component structure:
+  - `src/components/layout/` — Layout components (MainLayout, AppHeader, HeaderTitle, HeaderActions)
+  - `src/components/navigation/` — Navigation components (Breadcrumbs, SearchInput, BackButton)
+  - `src/components/object/` — Object management (ObjectsList, ObjectTableRow, ObjectIcon, dragdrop/)
+  - `src/components/bucket/` — Bucket management components
+  - `src/components/ui/` — Reusable UI components (Button, Modal, Input, LoadingSpinner, EmptyState)
+  - `src/components/modals/` — All modal dialogs
+  - `src/hooks/s3/` — Specialized S3 hooks (useBuckets, useObjects, useS3Delete, useS3Rename, etc.)
+  - `src/hooks/ui/` — UI-specific hooks (useContextMenu)
+  - `src/utils/` — Utility functions (formatters, errorUtils)
 - Built with React + Vite + Tailwind CSS v4
 - Upload functionality supports drag & drop of files and folders with Tauri's native file handling
 - Settings are managed through `SettingsContext.jsx` with localStorage persistence
@@ -141,20 +150,47 @@ This creates platform-specific installers in `src-tauri/target/release/bundle/` 
 - For production, replace plain-text config storage with encrypted storage or OS-level secure stores (Keychain, Secret Service, etc.).
 - Be cautious if shipping pre-configured builds with sensitive data.
 
-## Quick file map — useful files to inspect
-- `src/App.jsx` — main frontend component
-- `src/components/*` — UI components
+## Quick file map — useful files to inspect (UPDATED FOR REFACTORED ARCHITECTURE)
+### Core Application
+- `src/App.jsx` — main frontend component (uses MainLayout)
+- `src/components/layout/MainLayout.jsx` — main application layout (replaces AppContent)
+- `src/components/layout/AppHeader.jsx` — application header
+- `src/components/common/ViewManager.jsx` — manages view switching
+
+### Component Categories
+- `src/components/object/ObjectsList.jsx` — main objects table component  
+- `src/components/object/dragdrop/` — drag & drop functionality
+- `src/components/navigation/` — breadcrumbs, search, back button
+- `src/components/ui/` — reusable UI components (Button, Modal, Input, etc.)
+- `src/components/modals/` — all modal dialogs
 - `src/components/ConfigView.jsx` — Settings/configuration interface
-- `src/contexts/SettingsContext.jsx` — Application settings management
-- `src/hooks/useS3Operations.js` — S3 operations hooks using Tauri invoke
+
+### Hooks and Logic
+- `src/hooks/s3/useS3Operations.js` — main S3 operations hook (integrates all sub-hooks)
+- `src/hooks/s3/useBuckets.js` — bucket management
+- `src/hooks/s3/useObjects.js` — object operations
+- `src/hooks/s3/useS3Delete.js` — delete operations
+- `src/hooks/s3/useS3Rename.js` — rename operations
+- `src/hooks/s3/useS3Folders.js` — folder management
+- `src/hooks/ui/useContextMenu.js` — context menu logic
 - `src/hooks/useUpload.js` — Upload functionality with drag & drop support
+
+### Utilities and Context
+- `src/contexts/SettingsContext.jsx` — Application settings management
+- `src/utils/formatters.js` — formatting utilities (file size, dates)
+- `src/utils/errorUtils.js` — error handling utilities
+
+### Backend
 - `src-tauri/src/lib.rs` — Tauri app setup and command registration
 - `src-tauri/src/commands.rs` — Tauri command handlers
 - `src-tauri/src/s3_client.rs` — S3 operations using AWS SDK for Rust
 - `src-tauri/src/models.rs` — Data structures and error types
 - `src-tauri/Cargo.toml` — Rust dependencies and Tauri configuration
+
+### Development
 - `dev.sh` — convenience script to run the dev environment
 - `docs/demo.gif` — Application demo for README
+- `REFACTORING_PLAN.md` — detailed refactoring documentation
 
 ## Application Settings System
 Settings are managed through React Context (`SettingsContext.jsx`) with localStorage persistence:
@@ -168,13 +204,33 @@ Default settings:
 - `autoRefreshInterval: 30` — Refresh interval in seconds
 - `confirmDelete: true` — Show confirmation dialogs before deletions
 
-## Notes for assistant agents (Claude)
+## Notes for assistant agents (Claude) — REFACTORED ARCHITECTURE
 - Use this file as a quick reference for running the project, debugging common issues, and locating primary integration points.
-- If asked to modify behavior related to buckets/objects, check the Rust backend files:
-  - `src-tauri/src/commands.rs` for Tauri command handlers
-  - `src-tauri/src/s3_client.rs` for S3 operations
-  - `src-tauri/src/models.rs` for data structures
-  - Corresponding frontend components in `src/components/`
-- For settings-related changes, check `src/contexts/SettingsContext.jsx` and `src/components/ConfigView.jsx`
+
+### Architecture Changes:
+- **MainLayout** replaces AppContent as the main application component
+- **Modular hooks**: `useS3Operations` now integrates smaller specialized hooks (`useBuckets`, `useObjects`, etc.)
+- **Component organization**: Components are grouped by functionality (layout, navigation, object, ui, modals)
+- **Reusable UI components**: Button, Modal, Input components for consistent styling
+
+### When modifying functionality:
+- **Bucket operations**: Check `src/hooks/s3/useBuckets.js` and `src/components/bucket/`
+- **Object operations**: Check `src/hooks/s3/useObjects.js` and `src/components/object/`
+- **UI components**: Check `src/components/ui/` for reusable components
+- **Navigation**: Check `src/components/navigation/` and `src/hooks/useNavigation.js`
+- **Layout changes**: Check `src/components/layout/MainLayout.jsx` and `src/components/layout/AppHeader.jsx`
+- **Drag & drop**: Check `src/components/object/dragdrop/` and `src/hooks/useUpload.js`
+
+### Backend:
+- `src-tauri/src/commands.rs` for Tauri command handlers
+- `src-tauri/src/s3_client.rs` for S3 operations  
+- `src-tauri/src/models.rs` for data structures
+
+### Settings and Context:
+- Settings: `src/contexts/SettingsContext.jsx` and `src/components/ConfigView.jsx`
 - The backend is implemented in pure Rust using Tauri's IPC system for frontend-backend communication.
-- When debugging drag & drop issues, focus on `useUpload.js` basePath calculation and `commands.rs` build_s3_key function.
+
+### Development Guidelines:
+- Use existing UI components from `src/components/ui/` before creating new ones
+- Follow the modular hook pattern when adding new S3 functionality
+- Maintain the component organization structure when adding new features

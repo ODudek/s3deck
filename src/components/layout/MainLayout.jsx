@@ -1,33 +1,31 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { invoke } from '@tauri-apps/api/core';
 
 // Components
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import BucketsTable from "./BucketsTable";
-import ObjectsTable from "./ObjectsTable";
-import ContextMenu from "./ContextMenu";
-import AddBucketModal from "./AddBucketModal";
-import DeleteConfirmModal from "./DeleteConfirmModal";
-import PropertiesModal from "./PropertiesModal";
-import RenameModal from "./RenameModal";
-import CreateFolderModal from "./CreateFolderModal";
-import NotificationBanner from './ui/NotificationBanner';
-import UploadProgress from './ui/UploadProgress';
-import ConfigView from './ConfigView';
+import Sidebar from "../Sidebar";
+import AppHeader from "./AppHeader";
+import ViewManager from "../common/ViewManager";
+import ContextMenu from "../ContextMenu";
+import AddBucketModal from "../AddBucketModal";
+import DeleteConfirmModal from "../DeleteConfirmModal";
+import PropertiesModal from "../PropertiesModal";
+import RenameModal from "../RenameModal";
+import CreateFolderModal from "../CreateFolderModal";
+import NotificationBanner from '../ui/NotificationBanner';
+import UploadProgress from '../ui/UploadProgress';
 
 // Custom hooks
-import { useNotifications } from "../hooks/useNotifications";
-import { useModals } from "../hooks/useModals";
-import { useNavigation } from "../hooks/useNavigation";
-import { useS3Operations } from "../hooks/useS3Operations";
-import { useUpload } from "../hooks/useUpload";
-import { useTheme } from "../hooks/useTheme";
+import { useNotifications } from "../../hooks/useNotifications";
+import { useModals } from "../../hooks/useModals";
+import { useNavigation } from "../../hooks/useNavigation";
+import { useS3Operations } from "../../hooks/s3/useS3Operations";
+import { useUpload } from "../../hooks/useUpload";
+import { useTheme } from "../../hooks/useTheme";
+import { useContextMenu } from "../../hooks/ui/useContextMenu";
 
-export default function AppContent() {
+export default function MainLayout() {
   const [activeView, setActiveView] = useState("buckets");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [contextMenu, setContextMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [renameItem, setRenameItem] = useState(null);
@@ -41,21 +39,13 @@ export default function AppContent() {
   const modals = useModals();
   const navigation = useNavigation();
   const s3Operations = useS3Operations();
+  const contextMenu = useContextMenu();
   const upload = useUpload(
     s3Operations.selectedBucketRef,
     navigation.currentPathRef,
     notifications.showNotification,
     s3Operations.loadObjects
   );
-
-  // Handle context menu clicks outside
-  useEffect(() => {
-    const handleClickOutside = () => setContextMenu(null);
-    if (contextMenu) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [contextMenu]);
 
   // Enhanced loadObjects that also updates navigation
   const loadObjectsWithNavigation = async (bucketId, prefix = "") => {
@@ -80,55 +70,8 @@ export default function AppContent() {
   };
 
   // Context menu handlers
-  const handleRightClick = (e, type, item) => {
-    e.preventDefault();
-
-    // More precise menu height estimation based on actual content
-    let estimatedMenuHeight = 16; // Base padding
-    if (type === 'bucket') {
-      estimatedMenuHeight = 140; // Browse + Edit + separator + Delete (3 items + divider + padding)
-    } else if (type === 'object') {
-      if (item?.isFolder) {
-        estimatedMenuHeight = 180; // Open + Rename + Properties + separator + Delete (4 items + divider + padding)
-      } else {
-        estimatedMenuHeight = 180; // Download + Rename + Properties + separator + Delete (4 items + divider + padding)
-      }
-    }
-
-    // Get viewport dimensions
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-
-    // Calculate position with margins
-    const margin = 20; // Minimum distance from viewport edges
-    let x = e.clientX;
-    let y = e.clientY;
-
-    // Adjust Y position if menu would overflow bottom
-    if (y + estimatedMenuHeight + margin > viewportHeight) {
-      y = Math.max(margin, y - estimatedMenuHeight);
-    }
-
-    // Adjust X position if menu would overflow right
-    const estimatedMenuWidth = 160; // Slightly wider for better text spacing
-    if (x + estimatedMenuWidth + margin > viewportWidth) {
-      x = Math.max(margin, x - estimatedMenuWidth);
-    }
-
-    // Ensure minimum distance from edges
-    x = Math.max(margin, Math.min(x, viewportWidth - estimatedMenuWidth - margin));
-    y = Math.max(margin, Math.min(y, viewportHeight - estimatedMenuHeight - margin));
-
-    setContextMenu({
-      x,
-      y,
-      type,
-      item
-    });
-  };
-
   const handleContextAction = (action, item) => {
-    setContextMenu(null);
+    contextMenu.closeContextMenu();
 
     if (action === 'browse' && item) {
       navigation.resetNavigation();
@@ -267,7 +210,7 @@ export default function AppContent() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <Header
+        <AppHeader
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           activeView={activeView}
@@ -295,45 +238,37 @@ export default function AppContent() {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto">
-          {activeView === "buckets" ? (
-            <BucketsTable
-              buckets={s3Operations.buckets}
-              searchQuery={searchQuery}
-              handleRightClick={handleRightClick}
-              loadObjects={loadObjectsWithNavigation}
-              setCurrentPath={navigation.updateCurrentPath}
-              setPathHistory={navigation.setPathHistory}
-              setSearchQuery={setSearchQuery}
-              setActiveView={setActiveView}
-              setShowAddForm={modals.openAddBucket}
-            />
-          ) : activeView === "config" ? (
-            <ConfigView
-              buckets={s3Operations.buckets}
-              onDeleteBucket={handleDeleteBucket}
-              onEditBucket={handleEditBucket}
-              onAddBucket={modals.openAddBucket}
-            />
-          ) : (
-            <ObjectsTable
-              objects={s3Operations.objects}
-              loadingObjects={s3Operations.loadingObjects}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              handleRightClick={handleRightClick}
-              navigateToFolder={handleNavigateToFolder}
-              onDrop={handleDrop}
-              isDragOver={isDragOver}
-              setIsDragOver={setIsDragOver}
-              refreshObjects={() => loadObjectsWithNavigation(s3Operations.selectedBucket, navigation.currentPath)}
-              selectedBucket={s3Operations.selectedBucket}
-            />
-          )}
+          <ViewManager
+            activeView={activeView}
+            // Buckets props
+            buckets={s3Operations.buckets}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            handleRightClick={contextMenu.handleRightClick}
+            loadObjects={loadObjectsWithNavigation}
+            setCurrentPath={navigation.updateCurrentPath}
+            setPathHistory={navigation.setPathHistory}
+            setActiveView={setActiveView}
+            setShowAddForm={modals.openAddBucket}
+            // Objects props
+            objects={s3Operations.objects}
+            loadingObjects={s3Operations.loadingObjects}
+            navigateToFolder={handleNavigateToFolder}
+            onDrop={handleDrop}
+            isDragOver={isDragOver}
+            setIsDragOver={setIsDragOver}
+            refreshObjects={() => loadObjectsWithNavigation(s3Operations.selectedBucket, navigation.currentPath)}
+            selectedBucket={s3Operations.selectedBucket}
+            // Config props
+            onDeleteBucket={handleDeleteBucket}
+            onEditBucket={handleEditBucket}
+            onAddBucket={modals.openAddBucket}
+          />
         </div>
       </div>
 
       <ContextMenu
-        contextMenu={contextMenu}
+        contextMenu={contextMenu.contextMenu}
         handleContextAction={handleContextAction}
       />
 
