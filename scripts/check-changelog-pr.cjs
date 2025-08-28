@@ -75,7 +75,10 @@ function hasChangelogBeenUpdated() {
   const baseBranch = process.env.GITHUB_BASE_REF || 'main';
   const headBranch = process.env.GITHUB_HEAD_REF || execCommand('git rev-parse --abbrev-ref HEAD', { silent: true }).output;
 
-  log(`🔍 Checking CHANGELOG.md changes between ${baseBranch} and ${headBranch}`, 'blue');
+  // Only log if not in summary mode (when CI_MODE is set or summary command is used)
+  if (!process.env.CI_MODE && !process.argv.includes('summary')) {
+    log(`🔍 Checking CHANGELOG.md changes between ${baseBranch} and ${headBranch}`, 'blue');
+  }
 
   // Fetch the base branch to ensure we have the latest
   const fetchResult = execCommand(`git fetch origin ${baseBranch}`, { silent: true });

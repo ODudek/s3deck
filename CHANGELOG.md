@@ -5,6 +5,24 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Frontend Architecture Refactor**: Complete modular component reorganization
+  - Split large components (AppContent, ObjectsTable, Header) into smaller, focused components
+  - Organized components by functionality (layout/, navigation/, object/, ui/, modals/)
+  - Created reusable UI component system (Button, Modal, Input, LoadingSpinner, EmptyState)
+  - Refactored useS3Operations hook into specialized hooks (useBuckets, useObjects, useS3Delete, etc.)
+  - Improved code maintainability and development experience
+  - Better performance through smaller, optimized components
+  - Enhanced testing capabilities with modular architecture
+
+### Added
+- **Component Documentation**: Updated CLAUDE.md and README.md with new architecture details
+- **Reusable UI Components**: Button, Modal, Input component system for consistency
+- **Specialized Hooks**: Focused S3 operation hooks for better code organization
+- **Drag & Drop Components**: Modular drag & drop system in object/dragdrop/ folder
+
 ## [0.2.2] - 2025-01-01
 
 ### Added

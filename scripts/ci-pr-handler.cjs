@@ -37,14 +37,26 @@ function checkChangelogUpdate() {
 
     const result = execCommand('node scripts/check-changelog-pr.cjs summary', {
       silent: true,
-      env
+      env: {
+        ...env,
+        CI_MODE: 'true'
+      }
     });
 
     if (!result.success) {
-      throw new Error('Changelog check failed');
+      throw new Error(`Changelog check command failed: ${result.error}`);
     }
 
-    const changelogSummary = JSON.parse(result.output);
+    let changelogSummary;
+    try {
+      // Clean the output by taking only the JSON part (last line or after first {)
+      const cleanOutput = result.output.includes('{') ? 
+        result.output.substring(result.output.indexOf('{')) : 
+        result.output;
+      changelogSummary = JSON.parse(cleanOutput);
+    } catch (parseError) {
+      throw new Error(`Failed to parse changelog check result: ${parseError.message}. Output: "${result.output.substring(0, 200)}..."`);
+    }
     const recommendation = changelogSummary.recommendation;
 
     // Set outputs for GitHub Actions
