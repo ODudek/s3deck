@@ -5,7 +5,25 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2025-08-29
+
+### Added
+- **AWS Profile Integration**: Full support for AWS CLI profiles in Add Bucket Configuration
+  - Automatic loading of profiles from `~/.aws/config` without validation delays
+  - Smart bucket loading for selected AWS profiles with comprehensive error handling
+  - Support for mixed credential types (manual keys vs. AWS profiles) in the same application
+  - Profile-based bucket configurations with automatic credential management
+- **Enhanced Dropdown Components**: Complete overhaul of searchable dropdown functionality
+  - Portal-based rendering to prevent dropdown clipping in modals
+  - True dropdown behavior: shows all options on open, search filters without replacing selection
+  - Visual indication of selected items with checkmarks and highlighting
+  - Improved keyboard navigation and accessibility
+  - Dynamic positioning that adapts to scroll and window resize
+- **Intelligent Error Handling**: Advanced error system for AWS operations
+  - User-friendly error messages with specific remediation steps
+  - Context-aware error display (notifications for general errors, inline for form-specific issues)
+  - Automatic form state management based on error conditions
+  - Graceful handling of expired credentials, network issues, and permission errors
 
 ### Changed
 - **Frontend Architecture Refactor**: Complete modular component reorganization
@@ -16,12 +34,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved code maintainability and development experience
   - Better performance through smaller, optimized components
   - Enhanced testing capabilities with modular architecture
+- **AWS Profile Workflow**: Streamlined profile-based bucket configuration
+  - Removed automatic profile validation to eliminate loading delays
+  - Lazy validation approach: credentials are checked only when needed
+  - Improved form validation logic that adapts to configuration mode (manual vs. profile)
+  - Enhanced profile selection UI without status indicators for cleaner experience
 
-### Added
-- **Component Documentation**: Updated CLAUDE.md and README.md with new architecture details
-- **Reusable UI Components**: Button, Modal, Input component system for consistency
-- **Specialized Hooks**: Focused S3 operation hooks for better code organization
-- **Drag & Drop Components**: Modular drag & drop system in object/dragdrop/ folder
+### Fixed
+- **Dropdown Modal Clipping**: Resolved issues with dropdown menus being cut off by modal boundaries
+  - Implemented React portals for dropdown rendering outside modal containers
+  - Eliminated need for scrolling within modals to see dropdown options
+  - Proper z-index hierarchy: modals (50) < dropdowns (60) < notifications (70)
+- **AWS Profile Error Handling**: Comprehensive improvement of error communication
+  - Replaced generic "service error" messages with specific, actionable error descriptions
+  - Added automatic bucket selection disabling when profile credentials are invalid
+  - Clear visual indication when AWS operations fail with recovery suggestions
+- **Form State Management**: Intelligent form behavior based on AWS operations
+  - Automatic clearing of selected buckets when profile errors occur
+  - Prevention of invalid form submissions in AWS Profile mode
+  - Proper credential field handling for different configuration modes
+
+### Performance
+- **Faster AWS Profile Loading**: Eliminated blocking validation calls during profile enumeration
+  - Instant profile loading from local AWS configuration files
+  - Deferred validation until actual S3 operations are needed
+  - Reduced modal opening time for AWS Profile configuration mode
+- **Optimized Dropdown Rendering**: Portal-based dropdowns prevent modal layout recalculation
+  - Improved scrolling performance in modals with long dropdown lists
+  - Reduced memory usage during dropdown interactions
+
+### Security
+- **Enhanced AWS Credential Handling**: Improved security for profile-based configurations
+  - Backend automatically selects appropriate credential provider (direct keys vs. AWS profiles)
+  - Support for AWS credential provider chain including SSO, instance profiles, and environment variables
+  - Reduced credential exposure by supporting profile-only configurations
+
+### Documentation
+- **Component Documentation**: Updated CLAUDE.md with new AWS Profile integration architecture
+- **Specialized Hooks**: Documented focused S3 operation hooks for better code organization
+- **AWS Profile System**: Comprehensive documentation of profile-based configuration workflow
+- **Dropdown Components**: Technical documentation for portal-based dropdown implementation
 
 ## [0.2.2] - 2025-01-01
 

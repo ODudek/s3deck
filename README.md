@@ -48,7 +48,7 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v0.2.0
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v0.3.0
 ```
 
 **This installer will:**
