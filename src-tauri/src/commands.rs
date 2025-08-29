@@ -1,9 +1,11 @@
 use crate::{
+    aws_profiles::AwsProfileManager,
     config::ConfigManager,
     content_type::validate_filename,
     models::{
-        BucketConfig, DeleteResponse, FileItem, ObjectMetadata, RenameRequest, RenameResponse,
-        Result, S3DeckError, UploadFileInfo, UploadRequest, UploadResponse,
+        AwsProfile, BucketConfig, DeleteResponse, FileItem, ObjectMetadata, ProfileBucket,
+        ProfileStatus, RenameRequest, RenameResponse, Result, S3DeckError, UploadFileInfo,
+        UploadRequest, UploadResponse,
     },
     s3_client::S3Client,
 };
@@ -385,4 +387,43 @@ fn upload_directory<'a>(
 
         Ok((uploaded_files, failed_files))
     })
+}
+
+// AWS Profile commands
+#[command]
+pub async fn get_aws_profiles() -> Result<Vec<AwsProfile>> {
+    let profile_manager = AwsProfileManager::new();
+
+    let profiles = match profile_manager.get_aws_profiles() {
+        Ok(profiles) => profiles,
+        Err(e) => {
+            eprintln!("Error getting AWS profiles: {:?}", e);
+            // Return empty list instead of error - this is a common case
+            return Ok(Vec::new());
+        }
+    };
+
+    // Return profiles without validation - they will be validated on-demand
+    Ok(profiles)
+}
+
+#[command]
+pub async fn get_buckets_for_profile(profile_name: String) -> Result<Vec<ProfileBucket>> {
+    let profile_manager = AwsProfileManager::new();
+    profile_manager
+        .get_buckets_for_profile(&profile_name)
+        .await
+        .map_err(|e| {
+            eprintln!(
+                "Error getting buckets for profile '{}': {:?}",
+                profile_name, e
+            );
+            e // Error messages are now handled in aws_profiles.rs
+        })
+}
+
+#[command]
+pub async fn validate_aws_profile(profile_name: String) -> Result<ProfileStatus> {
+    let profile_manager = AwsProfileManager::new();
+    profile_manager.validate_aws_profile(&profile_name).await
 }

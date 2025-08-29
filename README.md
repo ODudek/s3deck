@@ -48,7 +48,7 @@ A modern, cross-platform desktop application for managing S3-compatible object s
 curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v0.2.0
+curl -fsSL https://raw.githubusercontent.com/ODudek/s3deck/main/install.sh | bash -s -- -v v0.3.0
 ```
 
 **This installer will:**
@@ -129,12 +129,15 @@ S3 Deck uses a modern desktop application architecture:
 - **Desktop Shell**: Tauri (Rust-based)
 - **Communication**: Direct Tauri IPC
 - **Configuration**: JSON-based local storage
-- **UI Framework**: Modern responsive design with smart component positioning
+- **UI Framework**: Organized component system with reusable UI components
 
 ```
 ┌─────────────────┐    ┌──────────────────────────────┐
-│   React UI      │───▶│      Tauri + Rust           │
-│  (Frontend)     │    │  (Desktop + S3 Operations)  │
+│   React UI      │───▶│      Tauri + Rust            │
+│  (Frontend)     │    │  (Desktop + S3 Operations)   │
+│  - Modular      │    │                              │
+│  - Organized    │    │                              │
+│  - Reusable UI  │    │                              │
 └─────────────────┘    └──────────────────────────────┘
 ```
 
@@ -152,21 +155,34 @@ S3 Deck uses a modern desktop application architecture:
 
 ```
 s3deck/
-├── src/                    # React frontend
-│   ├── components/         # React components
-│   ├── contexts/          # React contexts
-│   ├── hooks/             # Custom React hooks
+├── src/                         # React frontend (REFACTORED)
+│   ├── components/              # Modular component architecture
+│   │   ├── layout/             # Layout components (MainLayout, AppHeader)
+│   │   ├── navigation/         # Navigation (Breadcrumbs, SearchInput)
+│   │   ├── object/             # Object management (ObjectsList, dragdrop/)
+│   │   ├── bucket/             # Bucket management components
+│   │   ├── ui/                 # Reusable UI (Button, Modal, Input, etc.)
+│   │   ├── modals/             # Modal dialogs
+│   │   ├── common/             # Shared components (ViewManager)
+│   │   └── ...                 # Legacy components
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── s3/                 # S3-specific hooks (useBuckets, useObjects, etc.)
+│   │   ├── ui/                 # UI hooks (useContextMenu)
+│   │   └── ...                 # Other hooks
+│   ├── contexts/               # React contexts
+│   ├── utils/                  # Utility functions (formatters, errorUtils)
 │   └── ...
-├── src-tauri/             # Tauri application
-│   ├── src/               # Rust backend
-│   │   ├── main.rs        # Entry point
-│   │   ├── lib.rs         # Library entry point
-│   │   ├── commands.rs    # Tauri commands
-│   │   ├── s3_client.rs   # S3 operations
-│   │   ├── config.rs      # Configuration management
-│   │   └── models.rs      # Data models
-│   ├── Cargo.toml         # Rust dependencies
-│   └── tauri.conf.json    # Tauri configuration
+├── src-tauri/                  # Tauri application (UNCHANGED)
+│   ├── src/                    # Rust backend
+│   │   ├── main.rs             # Entry point
+│   │   ├── lib.rs              # Library entry point
+│   │   ├── commands.rs         # Tauri commands
+│   │   ├── s3_client.rs        # S3 operations
+│   │   ├── config.rs           # Configuration management
+│   │   └── models.rs           # Data models
+│   ├── Cargo.toml              # Rust dependencies
+│   └── tauri.conf.json         # Tauri configuration
+├── REFACTORING_PLAN.md         # Detailed refactoring documentation
 └── ...
 ```
 
@@ -232,6 +248,11 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+### Development Tips:
+- 🎨 Leverage existing UI components from `src/components/ui/`
+- 🎣 Follow the modular hook pattern for new S3 functionality
+- 📋 Check `CLAUDE.md` for detailed development guidelines
 
 ## 📝 License
 

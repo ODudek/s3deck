@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Examples:"
       echo "  $0                      # Install latest version"
-      echo "  $0 -v v0.2.0           # Install specific version"
+      echo "  $0 -v v0.3.0           # Install specific version"
       exit 0
       ;;
     *)

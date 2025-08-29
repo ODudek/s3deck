@@ -54,6 +54,9 @@ function generatePRSummary(options) {
     backendStatus,
     buildStatus,
     changelogRecommendation,
+    versionBumped,
+    baseVersion,
+    currentVersion,
     workflowRunId,
     repositoryName
   } = options;
@@ -68,8 +71,11 @@ function generatePRSummary(options) {
   const changelogOk = changelogRecommendation === 'PASS' ||
                      changelogRecommendation === 'SKIP';
 
-  // Overall status
-  const allPassed = allTestsPassed && changelogOk;
+  // Check if version was bumped (default to true if not provided for backward compatibility)
+  const versionOk = versionBumped !== undefined ? versionBumped : true;
+
+  // Overall status - now includes version bump check
+  const allPassed = allTestsPassed && changelogOk && versionOk;
 
   // Build the summary
   let summary = `## 🔍 CI/CD Summary for PR #${prNumber}\n\n`;
@@ -87,6 +93,15 @@ function generatePRSummary(options) {
   summary += `### 📊 Test Results\n`;
   summary += `| Check | Status | Result |\n`;
   summary += `|-------|--------|---------|\n`;
+  
+  // Add version bump status if available
+  if (versionBumped !== undefined) {
+    const versionBumpStatus = versionBumped ? 
+      `✅ Bumped: ${baseVersion} → ${currentVersion}` : 
+      `❌ Not bumped (still ${currentVersion})`;
+    summary += `| Version Bump | ${versionBumped ? '✅' : '❌'} | ${versionBumpStatus} |\n`;
+  }
+  
   summary += `| Version Consistency | ${getStatusEmoji(versionStatus)} | ${versionStatus} |\n`;
   summary += `| Frontend Tests | ${getStatusEmoji(frontendStatus)} | ${frontendStatus} |\n`;
   summary += `| Backend Tests | ${getStatusEmoji(backendStatus)} | ${backendStatus} |\n`;
@@ -100,18 +115,36 @@ function generatePRSummary(options) {
     summary += `✅ All checks passed! This PR is ready for review and merge.\n\n`;
   } else {
     let statusMessage = '❌ ';
-    if (allTestsPassed) {
-      statusMessage += 'Tests passed but ';
-    } else {
-      statusMessage += 'Some tests failed and ';
+    const issues = [];
+    
+    if (!allTestsPassed) {
+      issues.push('some tests failed');
+    }
+    if (!versionOk) {
+      issues.push('version needs to be bumped');
     }
     if (!changelogOk) {
-      statusMessage += 'CHANGELOG needs updating. ';
+      issues.push('CHANGELOG needs updating');
+    }
+    
+    if (issues.length > 0) {
+      statusMessage += issues.join(', ');
+      statusMessage = statusMessage.charAt(0).toUpperCase() + statusMessage.slice(1) + '. ';
     }
     statusMessage += 'Please review and fix any issues before merging.\n\n';
     summary += statusMessage;
   }
 
+  // Version Bump Required section (if needed)
+  if (versionBumped === false) {
+    summary += `### 🔢 Version Bump Required\n`;
+    summary += `Every PR must include a version bump. Please update the version in:\n`;
+    summary += `- \`package.json\`\n`;
+    summary += `- \`src-tauri/tauri.conf.json\`\n`;
+    summary += `- \`src-tauri/Cargo.toml\`\n\n`;
+    summary += `Run \`npm run version:bump patch\` for a patch version bump.\n\n`;
+  }
+  
   // CHANGELOG Update Required section (if needed)
   if (changelogRecommendation === 'UPDATE_NEEDED') {
     summary += `### 📝 CHANGELOG Update Required\n`;

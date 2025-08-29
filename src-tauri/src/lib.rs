@@ -1,3 +1,4 @@
+mod aws_profiles;
 mod commands;
 mod config;
 mod content_type;
@@ -26,6 +27,10 @@ pub fn run() {
             upload_files,
             count_files,
             rename_object,
+            // AWS Profile operations
+            get_aws_profiles,
+            get_buckets_for_profile,
+            validate_aws_profile,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

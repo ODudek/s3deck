@@ -20,17 +20,49 @@ const {
   execCommand
 } = require('./ci-utils.cjs');
 
-const { checkVersionConsistency: checkVersionsDirectly } = require('./check-version-consistency.cjs');
-
 function checkVersionConsistency() {
   log('🔍 Checking version consistency across all files...', 'blue');
 
   try {
-    // Use the direct function instead of npm command to avoid exit code issues
-    const result = checkVersionsDirectly(true); // silent mode
-
-    if (!result.success) {
-      throw new Error(result.errors ? result.errors.join(', ') : result.error || 'Version consistency check failed');
+    const fs = require('fs');
+    
+    // Read package.json
+    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    const packageVersion = packageJson.version;
+    
+    // Read tauri.conf.json
+    const tauriConf = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+    const tauriVersion = tauriConf.version;
+    
+    // Read Cargo.toml
+    const cargoContent = fs.readFileSync('src-tauri/Cargo.toml', 'utf8');
+    const cargoMatch = cargoContent.match(/^version\s*=\s*"([^"]+)"/m);
+    const cargoVersion = cargoMatch ? cargoMatch[1] : null;
+    
+    const versions = {
+      'package.json': packageVersion,
+      'src-tauri/tauri.conf.json': tauriVersion,
+      'src-tauri/Cargo.toml': cargoVersion
+    };
+    
+    // Check consistency
+    const allVersions = Object.values(versions).filter(v => v !== null);
+    const isConsistent = allVersions.every(v => v === allVersions[0]);
+    
+    const result = {
+      consistent: isConsistent,
+      version: packageVersion,
+      versions,
+      errors: []
+    };
+    
+    if (!isConsistent) {
+      result.errors.push('Version mismatch detected across files');
+      const versionsList = Object.entries(versions)
+        .map(([file, ver]) => `${file}: ${ver}`)
+        .join(', ');
+      log(`❌ Version mismatch: ${versionsList}`, 'red');
+      return { success: false, error: result.errors.join(', ') };
     }
 
     log(`✅ All versions are consistent: ${result.version}`, 'green');

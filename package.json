@@ -1,7 +1,7 @@
 {
   "name": "s3deck",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -36,6 +36,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@octokit/rest": "^22.0.0",
     "@tauri-apps/cli": "^2",
     "@vitejs/plugin-react": "^5.0.1",
     "autoprefixer": "^10.4.21",

@@ -13,6 +13,8 @@ pub struct BucketConfig {
     #[serde(rename = "secretKey")]
     pub secret_key: String,
     pub endpoint: Option<String>,
+    #[serde(rename = "awsProfile")]
+    pub aws_profile: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -109,6 +111,29 @@ pub struct RenameResponse {
     pub total_moved: Option<i32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AwsProfile {
+    pub name: String,
+    pub region: Option<String>,
+    pub status: ProfileStatus,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ProfileStatus {
+    Valid,
+    Expired,
+    Invalid,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProfileBucket {
+    pub name: String,
+    pub region: String,
+    #[serde(rename = "creationDate")]
+    pub creation_date: Option<DateTime<Utc>>,
+}
+
 #[derive(Debug, thiserror::Error, Serialize)]
 pub enum S3DeckError {
     #[error("Configuration error: {0}")]
@@ -128,6 +153,9 @@ pub enum S3DeckError {
 
     #[error("Invalid path: {0}")]
     InvalidPath(String),
+
+    #[error("AWS Profile error: {0}")]
+    AwsProfile(String),
 }
 
 impl From<std::io::Error> for S3DeckError {

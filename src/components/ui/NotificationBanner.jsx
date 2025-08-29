@@ -4,7 +4,7 @@ export default function NotificationBanner({ message, messageType, onClose }) {
   if (!message) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-[70] max-w-sm">
       <div className={`p-4 rounded-lg shadow-lg border transition-all duration-300 ${
         messageType === "success"
           ? "bg-green-50 border-green-200 text-green-800"

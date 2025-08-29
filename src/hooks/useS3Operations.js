@@ -99,10 +99,18 @@ export const useS3Operations = () => {
     }
   };
 
-  const addBucketConfig = async (onSuccess, onError) => {
-    if (!bucketConfig.name.trim() || !bucketConfig.accessKey.trim() ||
-        !bucketConfig.secretKey.trim() || !bucketConfig.region.trim()) {
-      return false;
+  const addBucketConfig = async (onSuccess, onError, configMode = 'manual', selectedProfile = null) => {
+    // For manual mode, all fields required
+    if (configMode === 'manual') {
+      if (!bucketConfig.name.trim() || !bucketConfig.accessKey.trim() ||
+          !bucketConfig.secretKey.trim() || !bucketConfig.region.trim()) {
+        return false;
+      }
+    } else {
+      // For AWS Profile mode, only name and region required (credentials come from profile)
+      if (!bucketConfig.name.trim() || !bucketConfig.region.trim()) {
+        return false;
+      }
     }
 
     setIsAdding(true);
@@ -114,9 +122,10 @@ export const useS3Operations = () => {
           name: bucketConfig.name,
           displayName: bucketConfig.displayName,
           region: bucketConfig.region,
-          accessKey: bucketConfig.accessKey,
-          secretKey: bucketConfig.secretKey,
-          endpoint: bucketConfig.endpoint || null
+          accessKey: configMode === 'manual' ? bucketConfig.accessKey : '',
+          secretKey: configMode === 'manual' ? bucketConfig.secretKey : '',
+          endpoint: bucketConfig.endpoint || null,
+          awsProfile: configMode === 'aws-profile' ? selectedProfile : null
         }
       });
 
@@ -211,8 +220,8 @@ export const useS3Operations = () => {
       // Calculate the full folder path
       let folderPath;
       if (currentPath) {
-        folderPath = currentPath.endsWith('/') 
-          ? currentPath + folderName 
+        folderPath = currentPath.endsWith('/')
+          ? currentPath + folderName
           : currentPath + '/' + folderName;
       } else {
         folderPath = folderName;

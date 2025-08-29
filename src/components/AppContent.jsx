@@ -152,11 +152,13 @@ export default function AppContent() {
   };
 
   // Modal handlers
-  const handleAddBucketSubmit = async (e) => {
+  const handleAddBucketSubmit = async (e, configMode = 'manual', selectedProfile = null) => {
     e.preventDefault();
     const success = await s3Operations.addBucketConfig(
       notifications.showSuccess,
-      notifications.showError
+      notifications.showError,
+      configMode,
+      selectedProfile
     );
     if (success) {
       modals.closeAddBucket();
@@ -342,6 +344,7 @@ export default function AppContent() {
         setBucketConfig={s3Operations.setBucketConfig}
         isAdding={s3Operations.isAdding}
         addBucketConfig={handleAddBucketSubmit}
+        showError={notifications.showError}
       />
 
       <DeleteConfirmModal

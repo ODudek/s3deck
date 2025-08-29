@@ -367,90 +367,87 @@ jobs:
         run: npm run ci:pr-workflow
 
       - name: Update PR Comment
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = process.env.PR_SUMMARY;
-
-            // Check if there's already a comment from this bot
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const botComment = comments.find(comment =>
-              comment.user.type === 'Bot' &&
-              comment.body.includes('CI/CD Summary for PR')
-            );
-
-            if (botComment) {
-              // Update existing comment
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: body
-              });
-            } else {
-              // Create new comment
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: body
-              });
-            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: node scripts/github-pr-comment.cjs upsert
 
   pr-status-check:
     name: PR Status Check
     runs-on: ubuntu-latest
-    needs: [pr-summary]
+    needs: [pr-summary, version-consistency, test-frontend, test-backend, build-tauri]
     if: github.event_name == 'pull_request'
     permissions:
       statuses: write
       checks: write
 
     steps:
-      - name: Set PR Status
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          script: |
-            const summary = '${{ needs.pr-summary.result }}';
-            const prNumber = context.issue.number;
+          node-version: "20"
+          cache: "npm"
 
-            let state, description;
+      - name: Install dependencies
+        run: npm ci
 
-            if (summary === 'success') {
-              state = 'success';
-              description = '✅ All checks passed - Ready for review';
-            } else {
-              state = 'failure';
-              description = '❌ Some checks failed - Review required';
+      - name: Create Status Check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          TEST_RESULTS: |
+            {
+              "versionStatus": "${{ needs.version-consistency.result }}",
+              "frontendStatus": "${{ needs.test-frontend.result }}",
+              "backendStatus": "${{ needs.test-backend.result }}",
+              "buildStatus": "${{ needs.build-tauri.result }}"
             }
+          STATUS_TARGET_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/github-status-check.cjs auto
 
-            // Create status check
-            await github.rest.repos.createCommitStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha,
-              state: state,
-              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              description: description,
-              context: 'S3 Deck CI/CD'
-            });
-
-            // Also create a check run for better visibility
-            await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: 'S3 Deck PR Summary',
-              head_sha: context.payload.pull_request.head.sha,
-              status: 'completed',
-              conclusion: state === 'success' ? 'success' : 'failure',
-              output: {
-                title: state === 'success' ? 'All checks passed!' : 'Some checks failed',
-                summary: `PR #${prNumber} ${state === 'success' ? 'is ready for review' : 'needs attention'}`,
-                text: `View the full summary in the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`
-              }
-            });
+      - name: Create Check Run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_SUMMARY_STATUS: ${{ needs.pr-summary.result }}
+          PR_NUMBER: ${{ github.event.number }}
+          STATUS: ${{ needs.pr-summary.result == 'success' && 'success' || 'failure' }}
+          TITLE: ${{ needs.pr-summary.result == 'success' && 'All checks passed!' || 'Some checks failed' }}
+          SUMMARY: ${{ needs.pr-summary.result == 'success' && 'PR is ready for review' || 'PR needs attention' }}
+        run: |
+          # Create a GitHub check run for better PR visibility
+          if [ "$PR_SUMMARY_STATUS" = "success" ]; then
+            STATUS="success"
+            TITLE="All checks passed!"
+            SUMMARY="PR #$PR_NUMBER is ready for review"
+          else
+            STATUS="failure" 
+            TITLE="Some checks failed"
+            SUMMARY="PR #$PR_NUMBER needs attention"
+          fi
+          
+          node -e "
+          const { Octokit } = require('@octokit/rest');
+          const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+          const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+          
+          octokit.rest.checks.create({
+            owner,
+            repo,
+            name: 'S3 Deck PR Summary',
+            head_sha: process.env.GITHUB_SHA,
+            status: 'completed',
+            conclusion: process.env.STATUS || 'failure',
+            output: {
+              title: process.env.TITLE || 'Check completed',
+              summary: process.env.SUMMARY || 'PR check summary',
+              text: \`View the full summary in the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\`
+            }
+          }).then(() => console.log('Check run created successfully'))
+            .catch(err => { console.error('Failed to create check run:', err.message); process.exit(1); });
+          "
