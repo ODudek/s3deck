@@ -19,6 +19,54 @@ const {
   getRepositoryInfo
 } = require('./ci-utils.cjs');
 
+function checkVersionBump() {
+  log('🔢 Checking if version was bumped in PR...', 'blue');
+  
+  try {
+    const baseBranch = process.env.GITHUB_BASE_REF || 'main';
+    
+    // Get package.json from base branch
+    const basePackageResult = execCommand(`git show origin/${baseBranch}:package.json`, { silent: true });
+    if (!basePackageResult.success) {
+      throw new Error(`Could not get package.json from base branch: ${basePackageResult.error}`);
+    }
+    
+    const basePackage = JSON.parse(basePackageResult.output);
+    const baseVersion = basePackage.version;
+    
+    // Get current package.json
+    const fs = require('fs');
+    const currentPackage = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+    const currentVersion = currentPackage.version;
+    
+    // Compare versions
+    const versionBumped = baseVersion !== currentVersion;
+    
+    log(`Base version: ${baseVersion}, Current version: ${currentVersion}`, 'blue');
+    
+    if (versionBumped) {
+      log(`✅ Version bumped from ${baseVersion} to ${currentVersion}`, 'green');
+    } else {
+      log(`❌ Version not bumped (still ${currentVersion})`, 'red');
+    }
+    
+    return {
+      success: true,
+      bumped: versionBumped,
+      baseVersion,
+      currentVersion
+    };
+    
+  } catch (error) {
+    log(`❌ Version check failed: ${error.message}`, 'red');
+    return {
+      success: false,
+      error: error.message,
+      bumped: false
+    };
+  }
+}
+
 function checkChangelogUpdate() {
   log('📋 Checking CHANGELOG update for PR...', 'blue');
 
@@ -26,42 +74,78 @@ function checkChangelogUpdate() {
   addToGitHubSummary('');
 
   try {
-    // Set environment variables for changelog check
-    const env = {
-      ...process.env,
-      GITHUB_BASE_REF: process.env.GITHUB_BASE_REF || 'main',
-      GITHUB_HEAD_REF: process.env.GITHUB_HEAD_REF || 'feature',
-      PR_TITLE: process.env.PR_TITLE || '',
-      PR_BODY: process.env.PR_BODY || ''
-    };
+    const baseBranch = process.env.GITHUB_BASE_REF || 'main';
+    const prTitle = process.env.PR_TITLE || '';
+    const prBody = process.env.PR_BODY || '';
 
-    const result = execCommand('node scripts/check-changelog-pr.cjs summary', {
-      silent: true,
-      env: {
-        ...env,
-        CI_MODE: 'true'
+    // Check for keywords that might indicate no changelog needed
+    const skipKeywords = [
+      'docs:', 'doc:', 'documentation',
+      'ci:', 'build:', 'chore:',
+      'style:', 'refactor:',
+      'test:', 'tests:',
+      '[skip changelog]', '[no changelog]',
+      'typo', 'formatting'
+    ];
+
+    const shouldSkip = skipKeywords.some(keyword =>
+      prTitle.toLowerCase().includes(keyword.toLowerCase()) ||
+      prBody.toLowerCase().includes(keyword.toLowerCase())
+    );
+
+    let recommendation = 'UPDATE_NEEDED';
+    let changelogUpdated = false;
+
+    if (shouldSkip) {
+      recommendation = 'SKIP';
+    } else {
+      // Check if CHANGELOG.md was modified
+      const fs = require('fs');
+      
+      // Get CHANGELOG content from base branch
+      const baseChangelogResult = execCommand(`git show origin/${baseBranch}:CHANGELOG.md`, { silent: true });
+      let baseContent = null;
+      
+      if (baseChangelogResult.success) {
+        const tempFile = '/tmp/changelog-base.md';
+        fs.writeFileSync(tempFile, baseChangelogResult.output);
+        baseContent = getChangelogUnreleasedSection(tempFile);
+        fs.unlinkSync(tempFile);
       }
-    });
-
-    if (!result.success) {
-      throw new Error(`Changelog check command failed: ${result.error}`);
+      
+      // Get current CHANGELOG content
+      const currentContent = getChangelogUnreleasedSection('CHANGELOG.md');
+      
+      // Compare the [Unreleased] sections
+      changelogUpdated = baseContent !== currentContent;
+      
+      if (changelogUpdated) {
+        recommendation = 'PASS';
+      }
     }
-
-    let changelogSummary;
-    try {
-      // Clean the output by taking only the JSON part (last line or after first {)
-      const cleanOutput = result.output.includes('{') ? 
-        result.output.substring(result.output.indexOf('{')) : 
-        result.output;
-      changelogSummary = JSON.parse(cleanOutput);
-    } catch (parseError) {
-      throw new Error(`Failed to parse changelog check result: ${parseError.message}. Output: "${result.output.substring(0, 200)}..."`);
+    
+    function getChangelogUnreleasedSection(filePath) {
+      try {
+        if (!fs.existsSync(filePath)) return null;
+        const content = fs.readFileSync(filePath, 'utf8');
+        
+        // Find the [Unreleased] section
+        const unreleasedMatch = content.match(/^## \[Unreleased\]([\s\S]*?)^## \[/m);
+        if (unreleasedMatch) return unreleasedMatch[1].trim();
+        
+        // If no next section found, get everything after [Unreleased]
+        const unreleasedToEndMatch = content.match(/^## \[Unreleased\]([\s\S]*)/m);
+        if (unreleasedToEndMatch) return unreleasedToEndMatch[1].trim();
+        
+        return null;
+      } catch (error) {
+        return null;
+      }
     }
-    const recommendation = changelogSummary.recommendation;
 
     // Set outputs for GitHub Actions
-    setGitHubOutput('changelog_should_update', changelogSummary.shouldUpdateChangelog.toString());
-    setGitHubOutput('changelog_updated', changelogSummary.changelogUpdated.toString());
+    setGitHubOutput('changelog_should_update', (!shouldSkip).toString());
+    setGitHubOutput('changelog_updated', changelogUpdated.toString());
     setGitHubOutput('changelog_recommendation', recommendation);
 
     // Add to summary
@@ -79,9 +163,8 @@ function checkChangelogUpdate() {
     return {
       success: true,
       recommendation,
-      shouldUpdate: changelogSummary.shouldUpdateChangelog,
-      updated: changelogSummary.changelogUpdated,
-      details: changelogSummary.details
+      shouldUpdate: !shouldSkip,
+      updated: changelogUpdated
     };
 
   } catch (error) {
@@ -97,7 +180,7 @@ function checkChangelogUpdate() {
   }
 }
 
-function generatePRSummary(testResults, changelogCheck) {
+function generatePRSummary(testResults, changelogCheck, versionCheck) {
   log('📝 Generating PR summary...', 'blue');
 
   try {
@@ -115,6 +198,9 @@ function generatePRSummary(testResults, changelogCheck) {
       backendStatus: testResults.backendStatus || 'unknown',
       buildStatus: testResults.buildStatus || 'unknown',
       changelogRecommendation: changelogCheck.recommendation || 'ERROR',
+      versionBumped: versionCheck ? versionCheck.bumped : false,
+      baseVersion: versionCheck ? versionCheck.baseVersion : null,
+      currentVersion: versionCheck ? versionCheck.currentVersion : null,
       workflowRunId: repo.runId,
       repositoryName: repo.full
     };
@@ -212,6 +298,7 @@ function runPRWorkflow(testResults) {
   log('🔄 Running PR workflow...', 'blue');
 
   const results = {
+    versionCheck: null,
     changelogCheck: null,
     prSummary: null,
     commentUpdate: null,
@@ -219,21 +306,25 @@ function runPRWorkflow(testResults) {
   };
 
   try {
-    // Step 1: Check CHANGELOG
+    // Step 1: Check version bump
+    results.versionCheck = checkVersionBump();
+    
+    // Step 2: Check CHANGELOG
     results.changelogCheck = checkChangelogUpdate();
 
-    // Step 2: Generate PR summary
-    results.prSummary = generatePRSummary(testResults, results.changelogCheck);
+    // Step 3: Generate PR summary
+    results.prSummary = generatePRSummary(testResults, results.changelogCheck, results.versionCheck);
 
     if (results.prSummary.success) {
-      // Step 3: Prepare comment update
+      // Step 4: Prepare comment update
       results.commentUpdate = updatePRComment(results.prSummary.summary);
 
-      // Step 4: Determine overall status
+      // Step 5: Determine overall status - now including version bump requirement
       const allTestsPassed = Object.values(testResults).every(status => status === 'success');
       const changelogOk = results.changelogCheck.recommendation === 'PASS' ||
                          results.changelogCheck.recommendation === 'SKIP';
-      const overallStatus = allTestsPassed && changelogOk ? 'success' : 'failure';
+      const versionBumped = results.versionCheck.bumped;
+      const overallStatus = allTestsPassed && changelogOk && versionBumped ? 'success' : 'failure';
 
       // Step 5: Create status check
       results.statusCheck = createPRStatusCheck(overallStatus, testResults);
@@ -242,6 +333,7 @@ function runPRWorkflow(testResults) {
       setGitHubOutput('pr_status', overallStatus);
       setGitHubOutput('all_tests_passed', allTestsPassed.toString());
       setGitHubOutput('changelog_ok', changelogOk.toString());
+      setGitHubOutput('version_bumped', versionBumped.toString());
     }
 
     const success = results.changelogCheck.success &&
@@ -326,8 +418,9 @@ function main() {
           buildStatus: process.env.BUILD_STATUS || 'unknown'
         };
 
+        const versionCheck = checkVersionBump();
         const changelogCheck = checkChangelogUpdate();
-        const summaryResult = generatePRSummary(testResults, changelogCheck);
+        const summaryResult = generatePRSummary(testResults, changelogCheck, versionCheck);
 
         console.log(JSON.stringify(summaryResult, null, 2));
         process.exit(summaryResult.success ? 0 : 1);
@@ -370,6 +463,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  checkVersionBump,
   checkChangelogUpdate,
   generatePRSummary,
   updatePRComment,
