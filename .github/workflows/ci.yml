@@ -416,6 +416,9 @@ jobs:
           GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
           PR_SUMMARY_STATUS: ${{ needs.pr-summary.result }}
           PR_NUMBER: ${{ github.event.number }}
+          STATUS: ${{ needs.pr-summary.result == 'success' && 'success' || 'failure' }}
+          TITLE: ${{ needs.pr-summary.result == 'success' && 'All checks passed!' || 'Some checks failed' }}
+          SUMMARY: ${{ needs.pr-summary.result == 'success' && format('PR #{0} is ready for review', github.event.number) || format('PR #{0} needs attention', github.event.number) }}
         run: |
           # Create a GitHub check run for better PR visibility
           if [ "$PR_SUMMARY_STATUS" = "success" ]; then
@@ -448,7 +451,3 @@ jobs:
           }).then(() => console.log('Check run created successfully'))
             .catch(err => { console.error('Failed to create check run:', err.message); process.exit(1); });
           "
-        env:
-          STATUS: ${{ needs.pr-summary.result == 'success' && 'success' || 'failure' }}
-          TITLE: ${{ needs.pr-summary.result == 'success' && 'All checks passed!' || 'Some checks failed' }}
-          SUMMARY: ${{ needs.pr-summary.result == 'success' && format('PR #{0} is ready for review', github.event.number) || format('PR #{0} needs attention', github.event.number) }}
