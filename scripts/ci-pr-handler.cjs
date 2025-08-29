@@ -153,11 +153,19 @@ function updatePRComment(summary) {
   log('💬 Updating PR comment...', 'blue');
 
   try {
-    // Save summary to environment for GitHub script
+    // Save summary to environment for GitHub script using GitHub Actions format
+    const fs = require('fs');
     const summaryFile = createTempFile(summary);
-
-    // Read and set as environment variable
-    process.env.PR_SUMMARY = summary;
+    
+    // Export for GitHub Actions - use GITHUB_ENV to set environment variables
+    if (process.env.GITHUB_ENV) {
+      fs.appendFileSync(process.env.GITHUB_ENV, `PR_SUMMARY<<EOF\n${summary}\nEOF\n`);
+      log('✅ PR summary exported to GitHub Actions environment', 'green');
+    } else {
+      // Fallback for non-GitHub environments
+      process.env.PR_SUMMARY = summary;
+      log('✅ PR summary set in local environment', 'green');
+    }
 
     log('✅ PR summary prepared for GitHub Actions', 'green');
     return { success: true, summaryFile };
