@@ -418,7 +418,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
           STATUS: ${{ needs.pr-summary.result == 'success' && 'success' || 'failure' }}
           TITLE: ${{ needs.pr-summary.result == 'success' && 'All checks passed!' || 'Some checks failed' }}
-          SUMMARY: ${{ needs.pr-summary.result == 'success' && format('PR #{0} is ready for review', github.event.number) || format('PR #{0} needs attention', github.event.number) }}
+          SUMMARY: ${{ needs.pr-summary.result == 'success' && 'PR is ready for review' || 'PR needs attention' }}
         run: |
           # Create a GitHub check run for better PR visibility
           if [ "$PR_SUMMARY_STATUS" = "success" ]; then
