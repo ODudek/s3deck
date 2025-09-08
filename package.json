@@ -28,7 +28,7 @@
     "ci:pr-workflow": "node scripts/ci-pr-handler.cjs workflow"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.1.12",
+    "@tailwindcss/postcss": "^4.1.13",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-opener": "^2",
     "js-yaml": "^4.1.0",
