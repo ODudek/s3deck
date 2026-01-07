@@ -21,10 +21,10 @@ jobs:
       release_notes: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"
@@ -74,13 +74,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout tag
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.get-tag.outputs.tag }}
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "20"
           cache: "npm"

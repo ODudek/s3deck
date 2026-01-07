@@ -5,6 +5,14 @@ All notable changes to S3 Deck will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Dependency Updates**: Bumped all project dependencies to latest versions
+  - NPM: @tailwindcss/postcss 4.1.16, @tauri-apps/api 2.9.0, @tauri-apps/plugin-opener 2.5.2, react 19.2.0, react-dom 19.2.0, @octokit/rest 22.0.1, @tauri-apps/cli 2.9.2, @vitejs/plugin-react 5.1.0, tailwindcss 4.1.16, vite 7.1.12
+  - Cargo: aws-sdk-s3 1.105.0, serde 1.0.228, serde_json 1.0.145, chrono 0.4.42, thiserror 2.0.17
+  - GitHub Actions: actions/checkout v6, actions/setup-node v6
+
 ## [0.3.0] - 2025-08-29
 
 ### Added
